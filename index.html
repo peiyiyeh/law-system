@@ -156,22 +156,25 @@
     }
 
     // --- 分派與接收功能 ---
-    function openAssignModal(idx) {
-        const item = lawData[idx];
-        const modal = document.getElementById('assignModal');
-        const info = document.getElementById('assignInfo');
-        const linkBox = document.getElementById('shareLink');
-        
-        info.innerText = `${item.lawName || '未命名'} (${item.id || '無編號'})`;
-        
-        // 生成連結：抓取目前的 URL 並替換成 form.html
-        const baseUrl = window.location.href.split('?')[0].replace('index.html', '').replace(/\/$/, '') + '/form.html';
-        const params = `?id=${item.id}&name=${encodeURIComponent(item.lawName)}&seq=${item.seq}`;
-        linkBox.innerText = baseUrl + params;
-        
-        modal.style.display = 'block';
-    }
-
+    
+function openAssignModal(idx) {
+    const item = lawData[idx];
+    const modal = document.getElementById('assignModal');
+    const info = document.getElementById('assignInfo');
+    const linkBox = document.getElementById('shareLink');
+    
+    info.innerText = `${item.lawName || '未命名'} (${item.id || '無編號'})`;
+    
+    // 自動抓取目前的網址目錄
+    const currentUrl = window.location.href.split('?')[0];
+    const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+    
+    // 組合出承辦人的 form.html 連結
+    const params = `?id=${item.id}&name=${encodeURIComponent(item.lawName)}&seq=${item.seq}`;
+    linkBox.innerText = baseUrl + "/form.html" + params;
+    
+    modal.style.display = 'block';
+}
     function closeAssignModal() { document.getElementById('assignModal').style.display = 'none'; }
 
     function copyShareLink() {
