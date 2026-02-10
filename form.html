@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>法律數據回填系統</title>
+    <style>
+        :root { --primary: #3498db; --success: #27ae60; --bg: #f8f9fa; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .form-card { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-top: 10px solid var(--primary); }
+        .case-header { background: #eef2f7; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid var(--primary); }
+        .case-header h3 { margin: 0; color: #2c3e50; }
+        .field-group { margin-bottom: 18px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; color: #444; font-size: 14px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 8px rgba(52,152,219,0.2); }
+        .btn-submit { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-submit:hover { background: #219150; transform: translateY(-2px); }
+        
+        /* 結果彈窗 */
+        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; justify-content:center; align-items:center; }
+        .result-box { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+        textarea { width: 100%; height: 100px; margin: 15px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; font-family: monospace; font-size: 12px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <div class="case-header">
+        <h3 id="display_name">載入中...</h3>
+        <small id="display_id">ID: ---</small>
+    </div>
+
+    <form id="taskForm">
+        <div class="field-group">
+            <label>條文數量</label>
+            <input type="number" name="cnt_article" placeholder="請輸入數字">
+        </div>
+        <div class="field-group">
+            <label>基本資料數量</label>
+            <input type="number" name="cnt_basic" placeholder="請輸入數字">
+        </div>
+        <div class="field-group">
+            <label>條文上傳日</label>
+            <input type="text" name="date_article_upload" placeholder="例如: 1140210">
+        </div>
+        <div class="field-group">
+            <label>修正紀錄數量</label>
+            <input type="number" name="cnt_fix" placeholder="請輸入數字">
+        </div>
+        <div class="field-group">
+            <label>理由數量</label>
+            <input type="number" name="cnt_reason" placeholder="請輸入數字">
+        </div>
+        <div class="field-group">
+            <label>理由上傳日</label>
+            <input type="text" name="date_reason_upload" placeholder="例如: 1140210">
+        </div>
+        <button type="submit" class="btn-submit">完成並產生回傳代碼</button>
+    </form>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="result-box">
+        <h2 style="color: var(--success);">🎉 填寫完成</h2>
+        <p style="font-size: 14px; color: #666;">請複製下方代碼並傳送給管理員：</p>
+        <textarea id="resultCode" readonly></textarea>
+        <button onclick="copyAndClose()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">複製代碼並關閉</button>
+    </div>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const caseId = params.get('id');
+    const caseName = params.get('name');
+    const caseSeq = params.get('seq');
+
+    document.getElementById('display_name').innerText = caseName || "未知案件";
+    document.getElementById('display_id').innerText = `法編號: ${caseId || "---"} (序號: ${caseSeq})`;
+
+    document.getElementById('taskForm').onsubmit = function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = {
+            action: "UPDATE_TASK",
+            seq: caseSeq, // 用序號當作對齊的基準
+            id: caseId,
+            values: {}
+        };
+        formData.forEach((value, key) => {
+            if(value) data.values[key] = value;
+        });
+
+        document.getElementById('resultCode').value = JSON.stringify(data);
+        document.getElementById('overlay').style.display = 'flex';
+    };
+
+    function copyAndClose() {
+        const text = document.getElementById('resultCode');
+        text.select();
+        document.execCommand('copy');
+        alert('代碼已複製！請將代碼傳給管理員貼回管理看板。');
+        document.getElementById('overlay').style.display = 'none';
+    }
+</script>
+</body>
+</html>
