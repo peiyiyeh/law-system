@@ -2,62 +2,100 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>法律管理看板 - 雲端同步專業版</title>
+    <title>法律管理看板 - 雲端同步強化版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --success: #27ae60; --warning: #e67e22; --cloud: #6c5ce7; --import: #444; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 10px; font-size: 15px; }
-        .container { max-width: 1700px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --success: #27ae60; --warning: #e67e22; --info: #6c5ce7; --cloud: #6c5ce7; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 10px; font-size: 16px; }
+        .container { max-width: 1650px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .btn-group button { border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; color: white; transition: 0.3s; }
-        
+        .view-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .tab-btn { padding: 8px 20px; border: none; background: #eee; cursor: pointer; border-radius: 20px; font-weight: bold; color: #666; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .stats-container { background: var(--primary); color: white; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
+        .stats-grid { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; }
+        .stat-box { border-left: 3px solid var(--accent); padding-left: 8px; }
+        .stat-val { font-size: 18px; font-weight: bold; color: #5dade2; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background: #34495e; color: white; padding: 10px 5px; font-size: 14px; position: sticky; top: 0; }
-        td { border-bottom: 1px solid #eee; padding: 8px 5px; text-align: center; }
-        
-        .in-num { width: 50px; padding: 4px; border: 1px solid #ccc; border-radius: 3px; text-align: center; }
-        .in-id { width: 80px; text-align: center; background: #fffbe6; border: 1px solid #ddd; }
-        .in-text { width: 95%; border: 1px solid #ddd; padding: 5px; border-radius: 3px; font-size: 14px; }
-        .in-date { width: 95px; padding: 4px; border: 1px solid #ccc; text-align: center; }
-        
-        .btn-assign { background: var(--accent); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        th { background: #34495e; color: white; padding: 8px 5px; font-size: 15px; vertical-align: middle; position: relative; }
+        td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: center; }
+        .add-row-btn { background: #27ae60; color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 20px; font-weight: bold; vertical-align: middle; margin-left: 4px; }
+        .filter-select { background: #ecf0f1; border: none; border-radius: 3px; font-size: 12px; margin-top: 3px; cursor: pointer; width: 95%; height: 24px; }
+        .dict-upload-btn { background: #555; color: white; border: 1px solid #777; padding: 2px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; margin-top: 5px; display: inline-block; }
+        .in-num { width: 45px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 16px; font-weight: bold; }
+        .in-date { width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 15px; }
+        .in-id { width: 90%; text-align: center; font-size: 16px; border: 1px solid #ddd; background: #fffbe6; }
+        .in-text { width: 95%; font-weight: bold; font-size: 15px; border: 1px solid #ddd; padding: 6px; border-radius: 3px; }
+        .in-name { color: var(--accent); }
+        .has-val { background: #d4edda !important; color: #155724; }
+        .btn-law { background: var(--info); color: white; padding: 5px 8px; border-radius: 4px; text-decoration: none; font-size: 13px; }
+        .btn-assign { background: var(--accent); color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
         .detail-row { background: #fafafa; display: none; }
         .detail-row.active { display: table-row; }
-        .item-box { display: inline-block; background: #eee; padding: 5px 8px; margin: 3px; border-radius: 4px; font-size: 13px; border: 1px solid #ddd; }
-        .has-val { background: #d4edda !important; color: #155724; }
-
-        /* 彈窗 */
+        .detail-container { padding: 10px; background: #fff; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; }
+        .compact-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .item-box { display: flex; align-items: center; background: #f1f3f5; padding: 4px 6px; border-radius: 4px; }
+        .item-box label { font-size: 13px; font-weight: bold; margin-right: 4px; }
+        
+        /* 彈窗樣式 */
         .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
         .modal-content { background: white; width: 420px; margin: 15% auto; padding: 20px; border-radius: 8px; position: relative; }
         .share-link { width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; word-break: break-all; margin: 10px 0; font-size: 12px; box-sizing: border-box; }
-        .sync-loading { color: var(--cloud); font-weight: bold; margin-left: 10px; display: none; }
+        .sync-loading { color: #fff; font-size: 14px; margin-left: 10px; display: none; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2>⚖️ 法律管理看板 <span id="syncStatus" class="sync-loading">正在同步雲端資料...</span></h2>
+        <h2>⚖️ 法律管理看板 - 雲端版 <span id="syncStatus" class="sync-loading">🔄 同步中...</span></h2>
         <div class="btn-group">
-            <button style="background:var(--warning)" onclick="copyExtractor()">1. 複製提取腳本</button>
+            <button style="background:var(--warning)" onclick="copyExtractorScript()">1. 公報提取</button>
             <button style="background:var(--accent)" onclick="importFromClipboard()">2. Json 匯入</button>
-            <button style="background:var(--success)" onclick="saveData()">3. 儲存排序</button>
+            <button style="background:#f39c12" onclick="saveAndSort()">3. 更新儲存</button>
             <button style="background:var(--cloud)" onclick="syncFromCloud()">☁️ 雲端同步</button>
-            <input type="file" id="excelFile" style="display:none" onchange="processExcel(this)">
-            <button style="background:#555" onclick="document.getElementById('excelFile').click()">📂 載入字典</button>
+            <button style="background:var(--success)" onclick="exportCSV()">Excel 匯出</button>
         </div>
+    </div>
+
+    <div class="view-tabs">
+        <button id="tab-all" class="tab-btn active" onclick="changeView('all')">全部</button>
+        <button id="tab-pending" class="tab-btn" onclick="changeView('pending')">未公布</button>
+        <button id="tab-published" class="tab-btn" onclick="changeView('published')">已公布</button>
+    </div>
+
+    <div class="stats-container">
+        <div>
+            <span>📅 統計基準：</span>
+            <select id="filterYear" onchange="updateStatistics()"></select> 年
+            <select id="filterMonth" onchange="updateStatistics()">
+                <option value="all">全年</option>
+                <option value="01">01月</option><option value="02">02月</option><option value="03">03月</option>
+                <option value="04">04月</option><option value="05">05月</option><option value="06">06月</option>
+                <option value="07">07月</option><option value="08">08月</option><option value="09">09月</option>
+                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+            </select>
+            <span id="dict-status" style="margin-left: 20px; font-size: 14px;"></span>
+        </div>
+        <div class="stats-grid" id="statsDisplay" style="margin-top:10px;"></div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width:65px;">序號</th>
-                <th style="width:100px;">法編號</th>
-                <th style="width:300px;">法名稱 (📂展開)</th>
-                <th style="width:250px;">異動明細</th>
-                <th style="width:110px;">三讀日期</th>
-                <th style="width:110px;">公佈日期</th>
-                <th style="width:100px;">操作</th>
+                <th style="width:75px;">序號<button class="add-row-btn" title="手動新增一列" onclick="addNewRow()">+</button></th>
+                <th style="width:110px;">
+                    法編號<br>
+                    <input type="file" id="excelFile" style="display:none" accept=".xlsx, .xls" onchange="processExcel(this)">
+                    <button class="dict-upload-btn" onclick="document.getElementById('excelFile').click()">📂 上傳字典</button>
+                </th>
+                <th style="width:320px;color:white;">法名稱 (📂展開)</th>
+                <th style="width:280px;">異動明細</th>
+                <th style="width:110px;" id="date-header">三讀日期</th>
+                <th style="width:110px;">公布日期</th>
+                <th style="width:150px;">操作</th>
                 <th style="width:40px;">✕</th>
             </tr>
         </thead>
@@ -76,60 +114,130 @@
 </div>
 
 <script>
-    // ⚠️ 請在此處貼上你的 Google Apps Script 網頁應用程式 URL
+    // ⚠️ 貼上你的 GAS 網址
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec"; 
 
     const DETAIL_FIELDS = [
-        {id: "cnt_article", label: "條文"},
-        {id: "cnt_basic", label: "基本資料"},
-        {id: "cnt_fix", label: "修正紀錄"},
-        {id: "cnt_history", label: "轉入沿革"},
-        {id: "cnt_rel", label: "相關條文"},
-        {id: "cnt_struct", label: "編章節款"},
-        {id: "cnt_attach", label: "附件"},
-        {id: "date_article_upload", label: "條文上傳日"},
-        {id: "cnt_reason", label: "理由"},
-        {id: "date_reason_upload", label: "理由上傳日"},
-        {id: "cnt_process", label: "歷程"},
-        {id: "date_process_upload", label: "歷程上傳日"}
+        {id: "cnt_article", label: "條文", type: "num"},
+        {id: "cnt_basic", label: "基本資料", type: "num"},
+        {id: "cnt_fix", label: "修正紀錄", type: "num"},
+        {id: "cnt_history", label: "轉入沿革", type: "num"},
+        {id: "cnt_rel", label: "相關條文", type: "num"},
+        {id: "cnt_struct", label: "編章節款", type: "num"},
+        {id: "cnt_attach", label: "附件", type: "num"},
+        {id: "date_article_upload", label: "條文上傳日", type: "date"},
+        {id: "cnt_reason", label: "理由", type: "num"},
+        {id: "date_reason_upload", label: "理由上傳日", type: "date"},
+        {id: "cnt_process", label: "歷程", type: "num"},
+        {id: "date_process_upload", label: "歷程上傳日", type: "date"},
+        {id: "cnt_resolution", label: "附帶決議", type: "num"}
     ];
+
+    const STAT_MAP = {
+        "cnt_article": "date_article_upload", "cnt_basic": "date_article_upload",
+        "cnt_fix": "date_article_upload", "cnt_history": "date_article_upload",
+        "cnt_rel": "date_article_upload", "cnt_struct": "date_article_upload",
+        "cnt_attach": "date_article_upload", "cnt_reason": "date_reason_upload",
+        "cnt_process": "date_process_upload",
+        "cnt_resolution": "date_process_upload" 
+    };
 
     let lawData = JSON.parse(localStorage.getItem('lawData')) || [];
     let lawDictionary = JSON.parse(localStorage.getItem('lawDictionary')) || {};
+    window.currentDateFilter = 'all';
 
-    // 1. 複製提取腳本 (整合你提供的新邏輯)
-    function copyExtractor() {
-        const script = `(function(){const cnToNum=(s)=>{if(!s)return "";if(!isNaN(s))return s;const map={'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100};let res=0,temp=0;for(let i=0;i<s.length;i++){const char=s[i];const n=map[char];if(n===10){if(temp===0)temp=1;res+=temp*10;temp=0}else if(n===100){res+=temp*100;temp=0}else{temp=n}}res+=temp;return res};const results=[];const items=document.querySelectorAll('.list-item, .card-body, .context-item');items.forEach(item=>{let text=item.innerText.replace(/\\s+/g,"");if(text.includes("完成三讀")&&!text.includes("預算案")){let fullTitle=text.split("完成三讀")[0].replace(/─+$/,"");let dateMatch=text.match(/(\\d{3})年(\\d{2})月(\\d{2})日/);let rocDate=dateMatch?dateMatch[1]+dateMatch[2]+dateMatch[3]:"";const changeVerbs=["修正","增訂","刪除","廢止"];let hasChange=changeVerbs.some(v=>fullTitle.includes(v));let lawName=fullTitle.split(new RegExp(changeVerbs.join('|')))[0];let finalCodeStr="f";if(hasChange){let finalCodes=[];let segments=fullTitle.split(/[；;]/);segments.forEach(seg=>{let prefix="";if(seg.includes("增訂"))prefix="b";else if(seg.includes("刪除"))prefix="c";else if(seg.includes("修正"))prefix="a";else if(seg.includes("廢止"))prefix="e";else return;let articles=[];const masterReg=/第([\\d一二三四五六七八九十百]+)條(?:之([\\d一二三四五六七八九十]+))?(?:至第([\\d一二三四五六七八九十百]+)條(?:之([\\d一二三四五六七八九十]+))?)?/g;let m;while((m=masterReg.exec(seg))!==null){let startFull=cnToNum(m[1])+(m[2]?"-"+cnToNum(m[2]):"");if(m[3]){articles.push(\`\${startFull}~\${cnToNum(m[3])}\${m[4]?"-"+cnToNum(m[4]):""}\`)}else{articles.push(startFull)}}if(articles.length>0){finalCodes.push(\`\${prefix} \${articles.join(',')}\`)}else{finalCodes.push(prefix==="a"?"d":prefix)}});if(finalCodes.length>0)finalCodeStr=finalCodes.join('; ')}results.push({lawName,date:rocDate,code:finalCodeStr})}});copy(JSON.stringify(results));alert("解析完成並複製 JSON！")})()`;
-        navigator.clipboard.writeText(script).then(() => alert("提取腳本已複製！"));
+    // 1. 公報提取腳本
+    function copyExtractorScript() {
+        const scriptText = `(function() {
+   const cnToNum = (s) => {
+       if (!s) return "";
+       if (!isNaN(s)) return s;
+       const map = {'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'百':100};
+       let res = 0, temp = 0;
+       for (let i = 0; i < s.length; i++) {
+           const char = s[i];
+           const n = map[char];
+           if (n === 10) {
+                if (temp === 0) temp = 1;
+                res += temp * 10;
+                temp = 0;
+           } else if (n === 100) {
+                res += temp * 100;
+                temp = 0;
+           } else { temp = n; }
+       }
+       res += temp;
+       return res;
+   };
+ 
+   const results = [];
+   const items = document.querySelectorAll('.list-item, .card-body, .context-item'); 
+ 
+   items.forEach(item => {
+       let text = item.innerText.replace(/\\s+/g, ""); 
+       if (text.includes("完成三讀") && !text.includes("預算案")) {
+           let fullTitle = text.split("完成三讀")[0].replace(/─+$/, "");
+           let dateMatch = text.match(/(\\d{3})年(\\d{2})月(\\d{2})日/);
+           let rocDate = dateMatch ? dateMatch[1] + dateMatch[2] + dateMatch[3] : "";
+           
+           const changeVerbs = ["修正", "增訂", "刪除", "廢止"];
+           let hasChange = changeVerbs.some(v => fullTitle.includes(v));
+           
+           let lawName = fullTitle.split(new RegExp(changeVerbs.join('|')))[0];
+           let finalCodeStr = "f"; 
+ 
+           if (hasChange) {
+                let finalCodes = [];
+                let segments = fullTitle.split(/[；;]/);
+                segments.forEach(seg => {
+                    let prefix = "";
+                    if (seg.includes("增訂")) prefix = "b";
+                    else if (seg.includes("刪除")) prefix = "c";
+                    else if (seg.includes("修正")) prefix = "a";
+                    else if (seg.includes("廢止")) prefix = "e";
+                    else return; 
+ 
+                    let articles = [];
+                    const masterReg = /第([\\d一二三四五六七八九十百]+)條(?:之([\\d一二三四五六七八九十]+))?(?:至第([\\d一二三四五六七八九十百]+)條(?:之([\\d一二三四五六七八九十]+))?)?/g;
+                    
+                    let m;
+                    while ((m = masterReg.exec(seg)) !== null) {
+                        let startFull = cnToNum(m[1]) + (m[2] ? "-" + cnToNum(m[2]) : "");
+                        if (m[3]) {
+                           articles.push(\`\${startFull}~\${cnToNum(m[3])}\${m[4] ? "-" + cnToNum(m[4]) : ""}\`);
+                        } else {
+                           articles.push(startFull);
+                        }
+                    }
+                    if (articles.length > 0) {
+                        finalCodes.push(\`\${prefix} \${articles.join(',')}\`);
+                    } else {
+                        finalCodes.push(prefix === "a" ? "d" : prefix);
+                    }
+                });
+               if (finalCodes.length > 0) finalCodeStr = finalCodes.join('; ');
+           }
+           results.push({ lawName, date: rocDate, code: finalCodeStr });
+       }
+   });
+   copy(JSON.stringify(results));
+   alert("解析完成！已複製 JSON。");
+})();`;
+        navigator.clipboard.writeText(scriptText).then(() => {
+            alert("提取腳本已複製！請至公報網頁 Console 執行。");
+        });
     }
 
-    // 2. 匯入功能
-    async function importFromClipboard() {
-        const text = await navigator.clipboard.readText();
-        try {
-            const imported = JSON.parse(text);
-            let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq)||0)) : 0;
-            imported.forEach(i => {
-                maxS++;
-                const name = i.lawName.trim();
-                const id = lawDictionary[name] || "";
-                lawData.push({ seq: maxS, id, lawName: name, code: i.code, date: i.date, pubDate: "", ...Object.fromEntries(DETAIL_FIELDS.map(f=>[f.id, ""])) });
-            });
-            renderTable();
-        } catch (e) { alert("格式錯誤"); }
-    }
-
-    // 3. 雲端同步功能 (從 Google Sheets 撈取資料)
+    // ☁️ 雲端同步功能
     async function syncFromCloud() {
-        if (!GAS_URL) {
-            alert("請先在程式碼中設定 GAS_URL");
+        if (!GAS_URL || GAS_URL.includes("你的網頁")) {
+            alert("請先設定正確的 GAS_URL");
             return;
         }
         document.getElementById('syncStatus').style.display = 'inline';
         try {
             const response = await fetch(GAS_URL);
             const cloudItems = await response.json();
-            
             let updateCount = 0;
             cloudItems.forEach(cloudRow => {
                 const target = lawData.find(local => local.seq == cloudRow.seq);
@@ -143,77 +251,195 @@
                 }
             });
             renderTable();
-            alert(`同步完成！共更新 ${updateCount} 筆法案數據。`);
+            alert(`✅ 同步完成！更新了 ${updateCount} 筆資料。`);
         } catch (e) {
-            console.error(e);
-            alert("同步失敗，請確認 GAS 是否已正確部署並開啟所有人存取權限。");
+            alert("同步失敗，請確認網路或 GAS 權限設定。");
         } finally {
             document.getElementById('syncStatus').style.display = 'none';
         }
     }
 
+    // 🚀 分派任務功能
+    function openAssign(idx) {
+        const item = lawData[idx];
+        const modal = document.getElementById('assignModal');
+        // 自動抓取當前 GitHub Pages 的目錄
+        const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        const link = `${currentPath}form.html?id=${item.id}&name=${encodeURIComponent(item.lawName)}&seq=${item.seq}`;
+        document.getElementById('assignInfo').innerText = `${item.lawName} (${item.id || '無編號'})`;
+        document.getElementById('shareLink').innerText = link;
+        modal.style.display = 'block';
+    }
+
+    function closeModal() { document.getElementById('assignModal').style.display='none'; }
+    function copyLink() { navigator.clipboard.writeText(document.getElementById('shareLink').innerText); alert("連結已複製！可傳送給承辦人。"); }
+
+    function cleanStr(s) { return String(s || "").trim().replace(/^["']|["']$/g, ""); }
+    
+    function findId(name) {
+        if (!name) return "";
+        const target = cleanStr(name);
+        const base = target.replace(/\(.*\)/g, "").replace(/(修正|制定|廢止|增訂|部分條文|修正案|案|全文修正)$/, "").trim();
+        const rawId = lawDictionary[target] || lawDictionary[base];
+        return rawId ? String(rawId).substring(0, 5).padStart(5, '0') : "";
+    }
+
+    function addNewRow() {
+        let maxSeq = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
+        const newEntry = { seq: maxSeq + 1, id: "", lawName: "", code: "", date: "", pubDate: "", ...Object.fromEntries(DETAIL_FIELDS.map(f => [f.id, ""])) };
+        lawData.unshift(newEntry);
+        localStorage.setItem('lawData', JSON.stringify(lawData));
+        renderTable();
+    }
+
+    function processExcel(input) {
+        if (!input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+            const newDict = {};
+            rows.forEach(row => {
+                let a = cleanStr(row[0]), b = cleanStr(row[1]);
+                if (a && b && a !== "法名稱" && b !== "法名稱") { !isNaN(a) && isNaN(b) ? newDict[b] = a : newDict[a] = b; }
+            });
+            lawDictionary = newDict;
+            localStorage.setItem('lawDictionary', JSON.stringify(newDict));
+            lawData.forEach(item => { if(!item.id) item.id = findId(item.lawName); });
+            renderTable(); alert("✅ 字典載入成功！");
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
+
     function renderTable() {
+        updateDateFilterUI();
         const body = document.getElementById('lawBody');
         body.innerHTML = '';
-        lawData.forEach((item, idx) => {
+        const filtered = lawData.filter(i => {
+            const hasPub = i.pubDate && i.pubDate.trim() !== '';
+            const view = window.currentView || 'all';
+            const tabMatch = view === 'pending' ? !hasPub : (view === 'published' ? hasPub : true);
+            const dateMatch = window.currentDateFilter === 'all' || cleanStr(i.date) === window.currentDateFilter;
+            return tabMatch && dateMatch;
+        });
+
+        filtered.forEach((item) => {
+            const idx = lawData.indexOf(item);
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="number" class="in-num" value="${item.seq}" onchange="update(${idx},'seq',this.value)"></td>
-                <td><input type="text" class="in-id" value="${item.id}" onchange="update(${idx},'id',this.value)"></td>
-                <td style="text-align:left;"><span onclick="toggleDetail(${idx})" style="cursor:pointer">📂</span> 
-                    <input type="text" class="in-text" value="${item.lawName}" onchange="update(${idx},'lawName',this.value)"></td>
-                <td><input type="text" class="in-text" value="${item.code}" onchange="update(${idx},'code',this.value)"></td>
-                <td><input type="text" class="in-date" value="${item.date}" onchange="update(${idx},'date',this.value)"></td>
-                <td><input type="text" class="in-date" value="${item.pubDate||''}" onchange="update(${idx},'pubDate',this.value)"></td>
-                <td><button class="btn-assign" onclick="openAssign(${idx})">🚀 分派</button></td>
-                <td><span onclick="deleteRow(${idx})" style="cursor:pointer;color:red;">✕</span></td>
+                <td><input type="number" class="in-num" value="${item.seq || idx + 1}" onchange="silentUpdate(${idx},'seq',this.value)"></td>
+                <td><input type="text" id="id-in-${idx}" class="in-id" value="${item.id || ''}" maxlength="5" onchange="silentUpdate(${idx},'id',this.value)"></td>
+                <td><div style="display:flex;align-items:center;"><span onclick="toggleDetail(${idx})" style="cursor:pointer;margin-right:5px;">📂</span>
+                    <input type="text" class="in-text in-name" value="${item.lawName || ''}" onchange="silentUpdate(${idx},'lawName',this.value)"></div></td>
+                <td><input type="text" class="in-text" value="${item.code || ''}" onchange="silentUpdate(${idx},'code',this.value)"></td>
+                <td><input type="text" class="in-date" value="${item.date || ''}" onchange="silentUpdate(${idx},'date',this.value); renderTable();"></td>
+                <td><input type="text" class="in-date" value="${item.pubDate || ''}" onchange="silentUpdate(${idx},'pubDate',this.value); renderTable();"></td>
+                <td style="display:flex; gap:3px; justify-content:center;">
+                    <a href="${item.id ? item.id+'.html' : '#'}" target="_blank" class="btn-law">⚖️</a>
+                    <button class="btn-assign" onclick="openAssign(${idx})">🚀分派</button>
+                </td>
+                <td><a href="#" onclick="deleteRow(${idx})" style="color:red; text-decoration:none;">✕</a></td>
             `;
             body.appendChild(tr);
 
             const dTr = document.createElement('tr');
             dTr.id = `detail-${idx}`; dTr.className = 'detail-row';
-            let dHtml = `<td colspan="8" style="text-align:left; padding-left:40px;">`;
+            let dHtml = `<td colspan="8"><div class="detail-container"><div class="compact-row">`;
             DETAIL_FIELDS.forEach(f => {
-                const val = item[f.id] || "";
-                dHtml += `<div class="item-box">${f.label}: <input type="text" class="in-num ${val!=''?'has-val':''}" value="${val}" onchange="update(${idx},'${f.id}',this.value)"></div>`;
+                let v = item[f.id] || "";
+                dHtml += `<div class="item-box" style="${f.type==='date'?'background:#e9ecef; border:1px solid #ced4da;':''}"><label>${f.label}</label>
+                         <input type="text" class="${f.type==='num'?'in-num':'in-date'} ${v!=''?'has-val':''}" value="${v}" onchange="silentUpdate(${idx},'${f.id}',this.value,this)"></div>`;
             });
-            dTr.innerHTML = dHtml + `</td>`;
+            dTr.innerHTML = dHtml + `</div></div></td>`;
             body.appendChild(dTr);
         });
+        updateStatistics();
+    }
+
+    function updateDateFilterUI() {
+        const header = document.getElementById('date-header');
+        const allDates = [...new Set(lawData.map(i => cleanStr(i.date)))].filter(d => d).sort((a,b) => b-a);
+        let html = `三讀日期<br><select class="filter-select" onchange="window.currentDateFilter = this.value; renderTable();">`;
+        html += `<option value="all">全部日期</option>`;
+        allDates.forEach(d => { html += `<option value="${d}" ${window.currentDateFilter === d ? 'selected' : ''}>${d}</option>`; });
+        header.innerHTML = html + `</select>`;
+    }
+
+    function silentUpdate(idx, field, val, el = null) {
+        lawData[idx][field] = val;
+        if (field === 'lawName') {
+            const found = findId(val);
+            if (found) { lawData[idx]['id'] = found; const idInp = document.getElementById(`id-in-${idx}`); if (idInp) idInp.value = found; }
+        }
+        if(el) { val!="" ? el.classList.add('has-val') : el.classList.remove('has-val'); }
         localStorage.setItem('lawData', JSON.stringify(lawData));
+        updateStatistics();
     }
 
-    function openAssign(idx) {
-        const item = lawData[idx];
-        const modal = document.getElementById('assignModal');
-        const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        const link = `${currentPath}form.html?id=${item.id}&name=${encodeURIComponent(item.lawName)}&seq=${item.seq}`;
-        document.getElementById('assignInfo').innerText = `${item.lawName} (${item.id})`;
-        document.getElementById('shareLink').innerText = link;
-        modal.style.display = 'block';
+    async function importFromClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
+            const imported = JSON.parse(text);
+            const array = Array.isArray(imported) ? imported : [imported];
+            let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
+            array.forEach(i => {
+                maxS++;
+                const name = cleanStr(i.lawName);
+                lawData.push({ seq: maxS, id: findId(name), lawName: name, code: i.code || '', date: i.date || '', pubDate: i.pubDate || '', ...Object.fromEntries(DETAIL_FIELDS.map(f=>[f.id, ""])) });
+            });
+            localStorage.setItem('lawData', JSON.stringify(lawData));
+            renderTable(); alert("✅ 匯入成功！");
+        } catch (e) { alert("內容格式不正確"); }
     }
 
-    function update(idx, k, v) { lawData[idx][k] = v; localStorage.setItem('lawData', JSON.stringify(lawData)); }
-    function toggleDetail(idx) { document.getElementById(`detail-${idx}`).classList.toggle('active'); }
-    function deleteRow(idx) { if(confirm("確定刪除？")) { lawData.splice(idx,1); renderTable(); } }
-    function closeModal() { document.getElementById('assignModal').style.display='none'; }
-    function copyLink() { navigator.clipboard.writeText(document.getElementById('shareLink').innerText); alert("連結已複製"); }
-    function saveData() { lawData.sort((a,b)=>a.seq-b.seq); renderTable(); alert("排序與儲存完成"); }
-    
-    function processExcel(input) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, {type:'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
-            rows.forEach(r => { if(r[0] && r[1]) lawDictionary[String(r[1]).trim()] = String(r[0]).trim(); });
-            localStorage.setItem('lawDictionary', JSON.stringify(lawDictionary));
-            alert("字典載入成功！"); renderTable();
-        };
-        reader.readAsArrayBuffer(input.files[0]);
+    function updateStatistics() {
+        const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
+        if(!fy) return;
+        const ty = fy.value, tm = fm.value;
+        let totals = {}, cases = 0;
+        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
+        lawData.forEach(item => {
+            const isMatch = (d) => { if(!d || d.length < 5) return false; const y = d.substring(0, d.length-4), m = d.substring(d.length-4, d.length-2); return tm === "all" ? y === ty : (y === ty && m === tm); };
+            if(isMatch(item.date_article_upload)) cases++;
+            DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { if(isMatch(item[STAT_MAP[f.id]])) totals[f.id] += (parseInt(item[f.id]) || 0); });
+        });
+        let h = `<div class="stat-box">月案件數：<span class="stat-val">${cases}</span></div>`;
+        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { h += `<div class="stat-box">${f.label}：<span class="stat-val">${totals[f.id]}</span></div>`; });
+        document.getElementById('statsDisplay').innerHTML = h;
     }
 
-    renderTable();
+    function exportCSV() {
+        let headers = ["序號", "法編號", "法名稱", "異動明細", "三讀日期", "公布日期"];
+        DETAIL_FIELDS.forEach(f => headers.push(f.label));
+        let csv = "\uFEFF" + headers.join(",") + "\n";
+        lawData.forEach(item => {
+            let row = [item.seq || "", item.id ? `="${item.id}"` : "", `"${(item.lawName || "").replace(/"/g, '""')}"`, `"${(item.code || "").replace(/"/g, '""')}"`, item.date || "", item.pubDate || ""];
+            DETAIL_FIELDS.forEach(f => row.push(item[f.id] || ""));
+            csv += row.join(",") + "\n";
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `LawData_Export.csv`; a.click();
+    }
+
+    const yearSel = document.getElementById('filterYear');
+    const currY = new Date().getFullYear() - 1911;
+    for(let y = currY; y >= 110; y--) yearSel.add(new Option(y, y));
+    document.getElementById('filterMonth').value = String(new Date().getMonth()+1).padStart(2,'0');
+
+    function updateDictStatus() {
+        const status = document.getElementById('dict-status');
+        const count = Object.keys(lawDictionary).length;
+        status.innerText = count > 0 ? `📔 字典：已就緒 (${count} 筆)` : `📔 字典：尚未上傳`;
+        status.style.color = count > 0 ? "#2ecc71" : "#e67e22";
+    }
+
+    function changeView(v) { window.currentView = v; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab-' + v).classList.add('active'); renderTable(); }
+    function deleteRow(i) { if(confirm("確定刪除？")) { lawData.splice(i,1); renderTable(); } }
+    function toggleDetail(i) { document.getElementById(`detail-${i}`).classList.toggle('active'); }
+    function saveAndSort() { lawData.sort((a,b)=>(parseInt(a.seq)||999)-(parseInt(b.seq)||999)); localStorage.setItem('lawData', JSON.stringify(lawData)); renderTable(); alert("✅ 儲存排序成功！"); }
+
+    updateDictStatus(); renderTable();
 </script>
 </body>
 </html>
