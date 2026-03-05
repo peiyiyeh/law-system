@@ -229,16 +229,15 @@
     }
 
     // ☁️ 雲端同步功能
-  async function syncFromCloud() {
-        if (!GAS_URL) {
-            alert("請先在程式碼中設定 GAS_URL");
+    async function syncFromCloud() {
+        if (!GAS_URL || GAS_URL.includes("你的網頁")) {
+            alert("請先設定正確的 GAS_URL");
             return;
         }
         document.getElementById('syncStatus').style.display = 'inline';
         try {
             const response = await fetch(GAS_URL);
             const cloudItems = await response.json();
-            
             let updateCount = 0;
             cloudItems.forEach(cloudRow => {
                 const target = lawData.find(local => local.seq == cloudRow.seq);
@@ -252,29 +251,13 @@
                 }
             });
             renderTable();
-            alert(`同步完成！共更新 ${updateCount} 筆法案數據。`);
+            alert(`✅ 同步完成！更新了 ${updateCount} 筆資料。`);
         } catch (e) {
-            console.error(e);
-            alert("同步失敗，請確認 GAS 是否已正確部署並開啟所有人存取權限。");
+            alert("同步失敗，請確認網路或 GAS 權限設定。");
         } finally {
             document.getElementById('syncStatus').style.display = 'none';
         }
     }
-
-        
-        renderTable();
-        // 改用較溫和的提示，若 updateCount 為 0 則不報警
-        if (updateCount > 0) {
-            console.log(`✅ 同步完成！更新了 ${updateCount} 筆資料。`);
-        }
-    } catch (e) {
-        console.error("同步失敗細節:", e);
-        // 只有在真的連線失敗時才提示
-        if (!window.navigator.onLine) alert("網路連線似乎中斷了。");
-    } finally {
-        document.getElementById('syncStatus').style.display = 'none';
-    }
-}
 
     // 🚀 分派任務功能
     function openAssign(idx) {
