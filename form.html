@@ -73,6 +73,11 @@
         "cnt_reason", "date_reason_upload", "cnt_process", "date_process_upload"
     ];
 
+    async function submitToGas() {
+        if (!GAS_URL) {
+            alert("錯誤：尚未設定雲端資料庫網址。");
+            return;
+        }
 
         const btn = document.getElementById('submitBtn');
         const loader = document.getElementById('loadingMsg');
