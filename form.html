@@ -2,105 +2,126 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>法律數據回填系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法案數據回填系統 - 雲端版</title>
     <style>
-        :root { --primary: #3498db; --success: #27ae60; --bg: #f8f9fa; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .form-card { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-top: 10px solid var(--primary); }
-        .case-header { background: #eef2f7; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid var(--primary); }
-        .case-header h3 { margin: 0; color: #2c3e50; }
-        .field-group { margin-bottom: 18px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; color: #444; font-size: 14px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 8px rgba(52,152,219,0.2); }
-        .btn-submit { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-submit:hover { background: #219150; transform: translateY(-2px); }
-        
-        /* 結果彈窗 */
-        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; justify-content:center; align-items:center; }
-        .result-box { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
-        textarea { width: 100%; height: 100px; margin: 15px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; font-family: monospace; font-size: 12px; box-sizing: border-box; }
+        :root { --primary: #1a73e8; --bg: #f8f9fa; --text: #3c4043; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; }
+        .card { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        .info-bar { background: #e8f0fe; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; }
+        .section-title { font-size: 1.1em; color: #5f6368; margin: 20px 0 10px; border-left: 4px solid var(--primary); padding-left: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .field { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #555; }
+        input { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        button:hover { background: #1765cc; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .loading { display: none; text-align: center; margin-top: 10px; color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="form-card">
-    <div class="case-header">
-        <h3 id="display_name">載入中...</h3>
-        <small id="display_id">ID: ---</small>
+<div class="card">
+    <h2>📝 法案數據回填 (雲端同步)</h2>
+    <div class="info-bar" id="display-info">正在載入法案資訊...</div>
+
+    <div class="section-title">📊 條文與理由統計</div>
+    <div class="grid">
+        <div class="field"><label>條文數</label><input type="number" id="cnt_article" placeholder="0"></div>
+        <div class="field"><label>理由數</label><input type="number" id="cnt_reason" placeholder="0"></div>
+        <div class="field"><label>條文上傳日 (ROC)</label><input type="text" id="date_article_upload" placeholder="例如 1130520"></div>
+        <div class="field"><label>理由上傳日 (ROC)</label><input type="text" id="date_reason_upload" placeholder="例如 1130521"></div>
     </div>
 
-    <form id="taskForm">
-        <div class="field-group">
-            <label>條文數量</label>
-            <input type="number" name="cnt_article" placeholder="請輸入數字">
-        </div>
-        <div class="field-group">
-            <label>基本資料數量</label>
-            <input type="number" name="cnt_basic" placeholder="請輸入數字">
-        </div>
-        <div class="field-group">
-            <label>條文上傳日</label>
-            <input type="text" name="date_article_upload" placeholder="例如: 1140210">
-        </div>
-        <div class="field-group">
-            <label>修正紀錄數量</label>
-            <input type="number" name="cnt_fix" placeholder="請輸入數字">
-        </div>
-        <div class="field-group">
-            <label>理由數量</label>
-            <input type="number" name="cnt_reason" placeholder="請輸入數字">
-        </div>
-        <div class="field-group">
-            <label>理由上傳日</label>
-            <input type="text" name="date_reason_upload" placeholder="例如: 1140210">
-        </div>
-        <button type="submit" class="btn-submit">完成並產生回傳代碼</button>
-    </form>
-</div>
-
-<div class="overlay" id="overlay">
-    <div class="result-box">
-        <h2 style="color: var(--success);">🎉 填寫完成</h2>
-        <p style="font-size: 14px; color: #666;">請複製下方代碼並傳送給管理員：</p>
-        <textarea id="resultCode" readonly></textarea>
-        <button onclick="copyAndClose()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer;">複製代碼並關閉</button>
+    <div class="section-title">🔍 進階細項統計</div>
+    <div class="grid">
+        <div class="field"><label>基本資料數</label><input type="number" id="cnt_basic" placeholder="0"></div>
+        <div class="field"><label>修正紀錄數</label><input type="number" id="cnt_fix" placeholder="0"></div>
+        <div class="field"><label>轉入沿革數</label><input type="number" id="cnt_history" placeholder="0"></div>
+        <div class="field"><label>相關條文數</label><input type="number" id="cnt_rel" placeholder="0"></div>
+        <div class="field"><label>編章節款數</label><input type="number" id="cnt_struct" placeholder="0"></div>
+        <div class="field"><label>附件數量</label><input type="number" id="cnt_attach" placeholder="0"></div>
     </div>
+
+    <div class="section-title">🛤️ 歷程追蹤</div>
+    <div class="grid">
+        <div class="field"><label>歷程數量</label><input type="number" id="cnt_process" placeholder="0"></div>
+        <div class="field"><label>歷程上傳日</label><input type="text" id="date_process_upload" placeholder="ROC日期"></div>
+    </div>
+
+    <button id="submitBtn" onclick="submitToGas()">確認並送出資料</button>
+    <div id="loadingMsg" class="loading">⏳ 資料傳送中，請稍候...</div>
 </div>
 
 <script>
-    const params = new URLSearchParams(window.location.search);
-    const caseId = params.get('id');
-    const caseName = params.get('name');
-    const caseSeq = params.get('seq');
+    // ⚠️ 請在此處貼上你的 Google Apps Script 網頁應用程式 URL
+    const GAS_URL = "你的網頁應用程式URL"; 
 
-    document.getElementById('display_name').innerText = caseName || "未知案件";
-    document.getElementById('display_id').innerText = `法編號: ${caseId || "---"} (序號: ${caseSeq})`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const lawId = urlParams.get('id') || '未知編號';
+    const lawName = urlParams.get('name') || '未知法案';
+    const seq = urlParams.get('seq');
 
-    document.getElementById('taskForm').onsubmit = function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const data = {
-            action: "UPDATE_TASK",
-            seq: caseSeq, // 用序號當作對齊的基準
-            id: caseId,
-            values: {}
-        };
-        formData.forEach((value, key) => {
-            if(value) data.values[key] = value;
+    document.getElementById('display-info').innerText = `案名：${lawName} (${lawId})`;
+
+    const fieldIds = [
+        "cnt_article", "cnt_basic", "cnt_fix", "cnt_history", 
+        "cnt_rel", "cnt_struct", "cnt_attach", "date_article_upload", 
+        "cnt_reason", "date_reason_upload", "cnt_process", "date_process_upload"
+    ];
+
+    async function submitToGas() {
+        if (!GAS_URL || GAS_URL === "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec") {
+            alert("錯誤：尚未設定雲端資料庫網址。");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loadingMsg');
+        
+        // 收集數據
+        const values = {};
+        fieldIds.forEach(id => {
+            values[id] = document.getElementById(id).value || "0";
         });
 
-        document.getElementById('resultCode').value = JSON.stringify(data);
-        document.getElementById('overlay').style.display = 'flex';
-    };
+        const payload = {
+            seq: seq,
+            id: lawId,
+            lawName: lawName,
+            values: values
+        };
 
-    function copyAndClose() {
-        const text = document.getElementById('resultCode');
-        text.select();
-        document.execCommand('copy');
-        alert('代碼已複製！請將代碼傳給管理員貼回管理看板。');
-        document.getElementById('overlay').style.display = 'none';
+        // 鎖定按鈕避免重複點擊
+        btn.disabled = true;
+        loader.style.display = 'block';
+
+        try {
+            // 使用 no-cors 模式發送 POST 請求
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors", 
+                cache: "no-cache",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            // 因為 no-cors 模式拿不到回應，直接假設成功
+            alert("✅ 資料已成功送往雲端試算表！\n您可以關閉此視窗了。");
+            window.close();
+            
+        } catch (e) {
+            console.error("Error:", e);
+            alert("❌ 上傳失敗，請確認網路連線或聯繫管理員。");
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
     }
 </script>
+
 </body>
 </html>
