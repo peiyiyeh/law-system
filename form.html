@@ -58,7 +58,7 @@
 
 <script>
     // ⚠️ 請在此處貼上你的 Google Apps Script 網頁應用程式 URL
-    const GAS_URL = "你的網頁應用程式URL"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec"; 
 
     const urlParams = new URLSearchParams(window.location.search);
     const lawId = urlParams.get('id') || '未知編號';
@@ -73,11 +73,6 @@
         "cnt_reason", "date_reason_upload", "cnt_process", "date_process_upload"
     ];
 
-    async function submitToGas() {
-        if (!GAS_URL || GAS_URL === "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec") {
-            alert("錯誤：尚未設定雲端資料庫網址。");
-            return;
-        }
 
         const btn = document.getElementById('submitBtn');
         const loader = document.getElementById('loadingMsg');
