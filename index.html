@@ -229,33 +229,38 @@
     }
 
     // ☁️ 雲端同步功能
-    async function syncFromCloud() {
-    if (!GAS_URL) {
-        alert("請先設定正確的 GAS_URL");
-        return;
+  async function syncFromCloud() {
+        if (!GAS_URL) {
+            alert("請先在程式碼中設定 GAS_URL");
+            return;
+        }
+        document.getElementById('syncStatus').style.display = 'inline';
+        try {
+            const response = await fetch(GAS_URL);
+            const cloudItems = await response.json();
+            
+            let updateCount = 0;
+            cloudItems.forEach(cloudRow => {
+                const target = lawData.find(local => local.seq == cloudRow.seq);
+                if (target) {
+                    DETAIL_FIELDS.forEach(f => {
+                        if (cloudRow[f.id] !== undefined && cloudRow[f.id] !== "") {
+                            target[f.id] = cloudRow[f.id];
+                        }
+                    });
+                    updateCount++;
+                }
+            });
+            renderTable();
+            alert(`同步完成！共更新 ${updateCount} 筆法案數據。`);
+        } catch (e) {
+            console.error(e);
+            alert("同步失敗，請確認 GAS 是否已正確部署並開啟所有人存取權限。");
+        } finally {
+            document.getElementById('syncStatus').style.display = 'none';
+        }
     }
-    document.getElementById('syncStatus').style.display = 'inline';
-    try {
-        const response = await fetch(GAS_URL);
-        if (!response.ok) throw new Error("伺服器回應異常");
-        
-        const cloudItems = await response.json();
-        if (!Array.isArray(cloudItems)) throw new Error("資料格式不正確");
 
-        let updateCount = 0;
-        cloudItems.forEach(cloudRow => {
-            // 確保 seq 是數字對比
-            const target = lawData.find(local => String(local.seq) === String(cloudRow.seq));
-            if (target) {
-                DETAIL_FIELDS.forEach(f => {
-                    // 只有當雲端有資料且不為空時才覆蓋本地
-                    if (cloudRow[f.id] !== undefined && cloudRow[f.id] !== null && cloudRow[f.id] !== "") {
-                        target[f.id] = cloudRow[f.id];
-                    }
-                });
-                updateCount++;
-            }
-        });
         
         renderTable();
         // 改用較溫和的提示，若 updateCount 為 0 則不報警
