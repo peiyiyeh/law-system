@@ -230,7 +230,7 @@
 
     // ☁️ 雲端同步功能
     async function syncFromCloud() {
-        if (!GAS_URL || GAS_URL.includes("你的網頁")) {
+        if (!GAS_URL) {
             alert("請先設定正確的 GAS_URL");
             return;
         }
