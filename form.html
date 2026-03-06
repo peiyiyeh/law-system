@@ -46,10 +46,11 @@
         <div class="field"><label>附件數量</label><input type="number" id="cnt_attach" placeholder="0"></div>
     </div>
 
-    <div class="section-title">🛤️ 歷程追蹤</div>
+    <div class="section-title">🛤️ 歷程與決議</div>
     <div class="grid">
         <div class="field"><label>歷程數量</label><input type="number" id="cnt_process" placeholder="0"></div>
         <div class="field"><label>歷程上傳日</label><input type="text" id="date_process_upload" placeholder="ROC日期"></div>
+        <div class="field"><label>附帶決議數</label><input type="number" id="cnt_resolution" placeholder="0"></div>
     </div>
 
     <button id="submitBtn" onclick="submitToGas()">確認並送出資料</button>
@@ -57,7 +58,6 @@
 </div>
 
 <script>
-    // ⚠️ 請在此處貼上你的 Google Apps Script 網頁應用程式 URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec"; 
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -65,12 +65,15 @@
     const lawName = urlParams.get('name') || '未知法案';
     const seq = urlParams.get('seq');
 
-    document.getElementById('display-info').innerText = `案名：${lawName} (${lawId})`;
+    // 💡 修改顯示名稱：案名：XXX (法編號：XXX)
+    document.getElementById('display-info').innerText = `案名：${lawName} (法編號：${lawId})`;
 
+    // 💡 在 fieldIds 陣列中新增 "cnt_resolution"
     const fieldIds = [
         "cnt_article", "cnt_basic", "cnt_fix", "cnt_history", 
         "cnt_rel", "cnt_struct", "cnt_attach", "date_article_upload", 
-        "cnt_reason", "date_reason_upload", "cnt_process", "date_process_upload"
+        "cnt_reason", "date_reason_upload", "cnt_process", "date_process_upload",
+        "cnt_resolution"
     ];
 
     async function submitToGas() {
@@ -82,10 +85,10 @@
         const btn = document.getElementById('submitBtn');
         const loader = document.getElementById('loadingMsg');
         
-        // 收集數據
         const values = {};
         fieldIds.forEach(id => {
-            values[id] = document.getElementById(id).value || "0";
+            const el = document.getElementById(id);
+            if (el) values[id] = el.value || "0";
         });
 
         const payload = {
@@ -95,12 +98,10 @@
             values: values
         };
 
-        // 鎖定按鈕避免重複點擊
         btn.disabled = true;
         loader.style.display = 'block';
 
         try {
-            // 使用 no-cors 模式發送 POST 請求
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors", 
@@ -109,7 +110,6 @@
                 body: JSON.stringify(payload)
             });
 
-            // 因為 no-cors 模式拿不到回應，直接假設成功
             alert("✅ 資料已成功送往雲端試算表！\n您可以關閉此視窗了。");
             window.close();
             
