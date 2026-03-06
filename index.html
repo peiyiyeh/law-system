@@ -278,7 +278,7 @@
         localStorage.setItem('lawData', JSON.stringify(lawData));
         renderTable();
         
-        alert(`✅ 同步完成！\n成功對接 ${updateCount} 筆資料。\n(註：未回填的欄位已保留原樣)`);
+        alert(`✅ 同步完成！已更新 ${updateCount} 筆資料。`);
 
     } catch (e) {
         console.error("同步失敗詳細原因:", e);
