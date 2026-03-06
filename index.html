@@ -57,6 +57,9 @@
             <button style="background:#f39c12" onclick="saveAndSort()">3. 更新儲存</button>
             <button style="background:var(--cloud)" onclick="syncFromCloud()">☁️ 雲端同步</button>
             <button style="background:var(--success)" onclick="exportCSV()">Excel 匯出</button>
+            <button onclick="exportToJson()" class="btn-backup" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 5px;">
+    Json 備份
+</button>
         </div>
     </div>
 
@@ -453,6 +456,29 @@
     function saveAndSort() { lawData.sort((a,b)=>(parseInt(a.seq)||999)-(parseInt(b.seq)||999)); localStorage.setItem('lawData', JSON.stringify(lawData)); renderTable(); alert("✅ 儲存排序成功！"); }
 
     updateDictStatus(); renderTable();
+    // Json 備份 (匯出) 功能
+function exportToJson() {
+    // 檢查是否有資料可以備份
+    if (!lawData || lawData.length === 0) {
+        alert("目前沒有資料可以備份喔！");
+        return;
+    }
+
+    // 將資料轉為 JSON 字串
+    const dataStr = JSON.stringify(lawData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+    // 自動產生檔名 (包含今天日期)
+    const exportFileDefaultName = `legislative_backup_${new Date().toISOString().slice(0,10)}.json`;
+
+    // 建立隱藏連結並觸發下載
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    console.log("備份完成");
+}
 </script>
 </body>
 </html>
