@@ -424,20 +424,47 @@
     }
 
     function updateStatistics() {
-        const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
-        if(!fy) return;
-        const ty = fy.value, tm = fm.value;
-        let totals = {}, cases = 0;
-        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
-        lawData.forEach(item => {
-            const isMatch = (d) => { if(!d || d.length < 5) return false; const y = d.substring(0, d.length-4), m = d.substring(d.length-4, d.length-2); return tm === "all" ? y === ty : (y === ty && m === tm); };
-            if(isMatch(item.date_article_upload)) cases++;
-            DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { if(isMatch(item[STAT_MAP[f.id]])) totals[f.id] += (parseInt(item[f.id]) || 0); });
+    const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
+    if (!fy) return;
+    const ty = fy.value, tm = fm.value;
+    let totals = {}, cases = 0;
+    
+    // 初始化統計數據
+    DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
+    
+    lawData.forEach(item => {
+        // 💡 修正點：強制將 d 轉為字串，避免數字格式導致 substring 崩潰
+        const isMatch = (d) => { 
+            if (!d) return false; 
+            const s = String(d); // 強制轉字串
+            if (s.length < 5) return false; 
+            
+            // 根據字串長度動態計算年分與月份 (處理 1130520 或 990520)
+            const y = s.substring(0, s.length - 4); 
+            const m = s.substring(s.length - 4, s.length - 2); 
+            
+            return tm === "all" ? y === ty : (y === ty && m === tm); 
+        };
+
+        // 檢查案件數 (條文上傳日)
+        if (isMatch(item.date_article_upload)) cases++;
+
+        // 統計各項細節數據 (如條文數、附帶決議數等)
+        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { 
+            // 根據對應的日期欄位 (STAT_MAP) 來判斷是否計入本月統計
+            if (isMatch(item[STAT_MAP[f.id]])) {
+                totals[f.id] += (parseInt(item[f.id]) || 0); 
+            }
         });
-        let h = `<div class="stat-box">月案件數：<span class="stat-val">${cases}</span></div>`;
-        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { h += `<div class="stat-box">${f.label}：<span class="stat-val">${totals[f.id]}</span></div>`; });
-        document.getElementById('statsDisplay').innerHTML = h;
-    }
+    });
+
+    // 渲染 HTML
+    let h = `<div class="stat-box">月案件數：<span class="stat-val">${cases}</span></div>`;
+    DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { 
+        h += `<div class="stat-box">${f.label}：<span class="stat-val">${totals[f.id]}</span></div>`; 
+    });
+    document.getElementById('statsDisplay').innerHTML = h;
+}
 
     function exportCSV() {
         let headers = ["序號", "法編號", "法名稱", "異動明細", "三讀日期", "公布日期"];
