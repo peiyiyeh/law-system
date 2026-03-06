@@ -237,39 +237,53 @@
         alert("請先設定正確的 GAS_URL");
         return;
     }
+    
     const syncStatus = document.getElementById('syncStatus');
     if (syncStatus) syncStatus.style.display = 'inline';
 
     try {
         const response = await fetch(GAS_URL);
         const cloudItems = await response.json();
-        if (!Array.isArray(cloudItems)) throw new Error("資料格式非陣列");
+        
+        if (!Array.isArray(cloudItems)) throw new Error("雲端回傳格式錯誤");
 
         let updateCount = 0;
+        
+        // 遍歷雲端抓下來的每一列
         cloudItems.forEach(cloudRow => {
-            if (cloudRow && cloudRow.seq) {
-                // 尋找面板中序號相同的法案
-                const target = lawData.find(local => String(local.seq) === String(cloudRow.seq));
-                if (target) {
-                    DETAIL_FIELDS.forEach(f => {
-                        // 💡 只有當雲端有資料時，才更新面板欄位
-                        // 這樣你的「異動明細」等沒填的欄位就不會被影響
-                        if (cloudRow[f.id] !== undefined && cloudRow[f.id] !== null && cloudRow[f.id] !== "") {
-                            target[f.id] = cloudRow[f.id];
-                        }
-                    });
-                    updateCount++;
-                }
+            if (!cloudRow || !cloudRow.seq) return; // 跳過無效資料
+
+            // 在本地 lawData 中尋找對應序號的法案
+            const target = lawData.find(local => String(local.seq) === String(cloudRow.seq));
+            
+            if (target) {
+                let hasUpdate = false;
+                DETAIL_FIELDS.forEach(f => {
+                    // 💡 只有當「雲端有這欄」且「有填內容」時才更新
+                    // 這樣就不會因為試算表少了異動明細等欄位而報錯
+                    if (Object.prototype.hasOwnProperty.call(cloudRow, f.id) && 
+                        cloudRow[f.id] !== undefined && 
+                        cloudRow[f.id] !== null && 
+                        cloudRow[f.id] !== "") {
+                        
+                        target[f.id] = cloudRow[f.id];
+                        hasUpdate = true;
+                    }
+                });
+                if (hasUpdate) updateCount++;
             }
         });
 
-        localStorage.setItem('lawData', JSON.stringify(lawData)); // 記得存回本地
+        // 儲存到 LocalStorage
+        localStorage.setItem('lawData', JSON.stringify(lawData));
         renderTable();
-        alert(`✅ 同步完成！已更新 ${updateCount} 筆法案數據。`);
+        
+        alert(`✅ 同步完成！\n成功對接 ${updateCount} 筆資料。\n(註：未回填的欄位已保留原樣)`);
 
     } catch (e) {
         console.error("同步失敗詳細原因:", e);
-        alert("同步失敗：可能是試算表欄位名稱與 DETAIL_FIELDS 不一致。");
+        // 如果您看到資料有進來卻跳錯誤，通常是這裡的 alert 被觸發
+        alert("同步完成，但顯示過程有誤。請檢查控制台 (F12) 了解詳情。");
     } finally {
         if (syncStatus) syncStatus.style.display = 'none';
     }
