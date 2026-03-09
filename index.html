@@ -408,20 +408,42 @@
     }
 
     async function importFromClipboard() {
-        try {
-            const text = await navigator.clipboard.readText();
-            const imported = JSON.parse(text);
-            const array = Array.isArray(imported) ? imported : [imported];
-            let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
-            array.forEach(i => {
-                maxS++;
-                const name = cleanStr(i.lawName);
-                lawData.push({ seq: maxS, id: findId(name), lawName: name, code: i.code || '', date: i.date || '', pubDate: i.pubDate || '', ...Object.fromEntries(DETAIL_FIELDS.map(f=>[f.id, ""])) });
+    try {
+        const text = await navigator.clipboard.readText();
+        const imported = JSON.parse(text);
+        const array = Array.isArray(imported) ? imported : [imported];
+        let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
+        
+        array.forEach(i => {
+            const name = cleanStr(i.lawName);
+            // 決定序號：有舊用舊，沒舊累加
+            const finalSeq = i.seq ? parseInt(i.seq) : ++maxS;
+            
+            const newEntry = { 
+                seq: finalSeq, 
+                id: i.id || findId(name), 
+                lawName: name, 
+                code: i.code || '', 
+                date: i.date || '', 
+                pubDate: i.pubDate || ''
+            };
+
+            // 自動對接細項欄位
+            DETAIL_FIELDS.forEach(f => {
+                newEntry[f.id] = (i[f.id] !== undefined) ? i[f.id] : "";
             });
-            localStorage.setItem('lawData', JSON.stringify(lawData));
-            renderTable(); alert("✅ 匯入成功！");
-        } catch (e) { alert("內容格式不正確"); }
+
+            lawData.push(newEntry);
+        });
+        
+        localStorage.setItem('lawData', JSON.stringify(lawData));
+        renderTable(); 
+        if (typeof updateStatistics === "function") updateStatistics(); // 同步更新上方統計
+        alert("✅ 匯入成功！已保留所有統計細項。");
+    } catch (e) { 
+        alert("內容格式不正確或剪貼簿無資料"); 
     }
+}
 
     function updateStatistics() {
     const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
