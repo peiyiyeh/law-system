@@ -627,6 +627,18 @@
         DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
         
         lawData.forEach(item => {
+            // ✅ 讓統計跟著「承辦人視角」與「分頁(全部/未公布/已公布)」一起過濾
+            const view = window.currentView || 'all';
+            const hasPub = item.pubDate && String(item.pubDate).trim() !== '';
+            const tabMatch = view === 'pending' ? !hasPub : (view === 'published' ? hasPub : true);
+
+            const aFilter = window.currentAssigneeFilter || 'all';
+            const aNameRaw = cleanStr(item.assignee);
+            const assigneeMatch = aFilter === 'all' ||
+                (aFilter === 'unassigned' ? !aNameRaw : aNameRaw === aFilter);
+
+            if (!tabMatch || !assigneeMatch) return;
+
             const isMatch = (d) => {
                 if (!d) return false;
                 const dd = String(d).replace(/\D/g, ""); // 允許 1130520 / 113-05-20 / 113/05/20
