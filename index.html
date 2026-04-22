@@ -2,64 +2,82 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>法律管理看板 - 雲端同步強化版</title>
+    <title>法律管理看板 - 附帶決議強化版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --success: #27ae60; --warning: #e67e22; --info: #6c5ce7; --cloud: #6c5ce7; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 10px; font-size: 16px; }
-        .container { max-width: 1650px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --success: #27ae60; --warning: #e67e22; --info: #6c5ce7; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 10px; font-size: 16px; margin: 0; }
+        .container { max-width: 1700px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .btn-group button { border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; color: white; transition: 0.3s; }
+        .btn-group button:hover { opacity: 0.8; }
         .view-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .tab-btn { padding: 8px 20px; border: none; background: #eee; cursor: pointer; border-radius: 20px; font-weight: bold; color: #666; }
+        .tab-btn { padding: 8px 20px; border: none; background: #eee; cursor: pointer; border-radius: 20px; font-weight: bold; color: #666; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: white; }
-        .stats-container { background: var(--primary); color: white; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
-        .stats-grid { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; }
-        .stat-box { border-left: 3px solid var(--accent); padding-left: 8px; }
-        .stat-val { font-size: 18px; font-weight: bold; color: #5dade2; }
+        
+        .stats-container { background: var(--primary); color: white; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stats-grid { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; margin-top: 10px; }
+        .stat-box { border-left: 3px solid var(--accent); padding-left: 8px; display: flex; align-items: baseline; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 0 4px 4px 0; }
+        .stat-val { font-size: 18px; font-weight: bold; color: #5dade2; margin-left: 6px; }
+        
+        .table-responsive { max-height: 65vh; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; box-shadow: inset 0 0 5px rgba(0,0,0,0.02); }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background: #34495e; color: white; padding: 8px 5px; font-size: 15px; vertical-align: middle; position: relative; }
-        td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: center; }
-        .add-row-btn { background: #27ae60; color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 20px; font-weight: bold; vertical-align: middle; margin-left: 4px; }
-        .filter-select { background: #ecf0f1; border: none; border-radius: 3px; font-size: 12px; margin-top: 3px; cursor: pointer; width: 95%; height: 24px; }
-        .dict-upload-btn { background: #555; color: white; border: 1px solid #777; padding: 2px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; margin-top: 5px; display: inline-block; }
-        .in-num { width: 45px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 16px; font-weight: bold; }
-        .in-date { width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 15px; }
-        .in-id { width: 90%; text-align: center; font-size: 16px; border: 1px solid #ddd; background: #fffbe6; }
-        .in-text { width: 95%; font-weight: bold; font-size: 15px; border: 1px solid #ddd; padding: 6px; border-radius: 3px; }
-        .in-name { color: var(--accent); }
-        .has-val { background: #d4edda !important; color: #155724; }
-        .btn-law { background: var(--info); color: white; padding: 5px 8px; border-radius: 4px; text-decoration: none; font-size: 13px; }
-        .btn-assign { background: var(--accent); color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        th { background: #34495e; color: white; padding: 10px 5px; font-size: 15px; vertical-align: middle; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 2px rgba(0,0,0,0.1); }
+        td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: center; vertical-align: top; }
+        tr:hover { background-color: #f8fbff; }
+        
+        .add-row-btn { background: #27ae60; color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 20px; font-weight: bold; vertical-align: middle; margin-left: 4px; transition: 0.2s; }
+        .add-row-btn:hover { transform: scale(1.1); }
+        .filter-select { background: #ecf0f1; border: 1px solid #bdc3c7; border-radius: 3px; font-size: 13px; margin-top: 3px; cursor: pointer; width: 95%; height: 26px; font-weight: bold; }
+        .dict-upload-btn { background: #555; color: white; border: 1px solid #777; padding: 2px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; margin-top: 5px; display: inline-block; transition: 0.2s; }
+        .dict-upload-btn:hover { background: #666; }
+        
+        .in-num { width: 45px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 16px; font-weight: bold; transition: border 0.2s; }
+        .in-num:focus { border-color: var(--accent); outline: none; }
+        .in-date { width: 90px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 14px; }
+        .in-id { width: 90%; text-align: center; font-size: 16px; border: 1px solid #ddd; background: #fffbe6; padding: 4px; border-radius: 3px; }
+        .in-text { width: 95%; font-weight: bold; font-size: 14px; border: 1px solid #ccc; padding: 6px; border-radius: 3px; box-sizing: border-box; }
+        .in-name { color: var(--accent); font-size: 15px; }
+        .in-assignee { width: 95%; padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px; font-weight: bold; text-align: center; box-sizing: border-box; background: #fdfdfd; cursor: pointer; }
+        
+        .has-val { background: #d4edda !important; color: #155724; border-color: #c3e6cb; }
+        .btn-law { background: var(--info); color: white; padding: 5px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; display: inline-block; margin-top: 5px; transition: 0.2s; }
+        .btn-law:hover { background: #5a4bcf; }
+        
         .detail-row { background: #fafafa; display: none; }
         .detail-row.active { display: table-row; }
-        .detail-container { padding: 10px; background: #fff; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; }
-        .compact-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-        .item-box { display: flex; align-items: center; background: #f1f3f5; padding: 4px 6px; border-radius: 4px; }
-        .item-box label { font-size: 13px; font-weight: bold; margin-right: 4px; }
+        .detail-container { padding: 12px; background: #fff; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; border-radius: 4px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); margin: 5px 10px; }
+        .compact-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .item-box { display: flex; align-items: center; background: #f8f9fa; padding: 5px 8px; border-radius: 4px; border: 1px solid #e9ecef; }
+        .item-box label { font-size: 13px; font-weight: bold; margin-right: 6px; color: #495057; }
         
-        /* 彈窗樣式 */
-        .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
-        .modal-content { background: white; width: 420px; margin: 15% auto; padding: 20px; border-radius: 8px; position: relative; }
-        .share-link { width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; word-break: break-all; margin: 10px 0; font-size: 12px; box-sizing: border-box; }
-        .sync-loading { color: #fff; font-size: 14px; margin-left: 10px; display: none; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .summary-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; justify-content: flex-start; }
+        .s-badge { background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 4px; border: 1px solid #ced4da; font-size: 11px; white-space: nowrap; }
+        .s-badge.filled { background: #d4edda; color: #155724; border-color: #c3e6cb; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; width: 90px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .status-unassigned { background: #ffeaa7; color: #d35400; border: 1px solid #fdcb6e; }
+        .status-progress { background: #81ecec; color: #00cec9; border: 1px solid #00cec9; }
+        .status-done { background: #55efc4; color: #00b894; border: 1px solid #00b894; }
+        
+        .progress-container { width: 90%; background: #dfe6e9; border-radius: 6px; height: 14px; margin: 6px auto 0; position: relative; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .progress-bar { height: 100%; background: var(--success); transition: width 0.4s ease; }
+        .progress-text { position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 10px; line-height: 14px; color: #2d3436; font-weight: bold; text-shadow: 0 0 2px white; }
     </style>
 </head>
 <body>
 
+<datalist id="assignee-list"></datalist>
+
 <div class="container">
     <div class="header">
-        <h2>⚖️ 法律管理看板 - 雲端版 <span id="syncStatus" class="sync-loading">🔄 同步中...</span></h2>
+        <h2>⚖️ 法律管理看板 - 管理與分派視角</h2>
         <div class="btn-group">
-            <button style="background:var(--warning)" onclick="copyExtractorScript()">1. 公報提取</button>
-            <button style="background:var(--accent)" onclick="importFromClipboard()">2. Json 匯入</button>
-            <button style="background:#f39c12" onclick="saveAndSort()">3. 更新儲存</button>
-            <button style="background:var(--cloud)" onclick="syncFromCloud()">☁️ 雲端同步</button>
-            <button style="background:var(--success)" onclick="exportCSV()">Excel 匯出</button>
-            <button onclick="exportToJson()" class="btn-backup" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-left: 5px;">
-    Json 備份
-</button>
+            <button style="background:var(--warning)" onclick="copyExtractorScript()" title="點擊複製爬蟲腳本">1. 公報提取</button>
+            <button style="background:var(--accent)" onclick="importFromClipboard()" title="將爬蟲取得的 JSON 匯入">2. Json 匯入</button>
+            <button style="background:#f39c12" onclick="saveAndSort()" title="依序號重新排序並儲存">3. 更新儲存</button>
+            <button style="background:var(--success)" onclick="exportCSV()" title="匯出成 Excel 格式 (含承辦人與進度)">4. Excel 匯出</button>
+            <button style="background:#9b59b6" onclick="exportJSON()" title="備份整個看板資料">5. Json 備份</button>
         </div>
     </div>
 
@@ -70,56 +88,63 @@
     </div>
 
     <div class="stats-container">
-        <div>
-            <span>📅 統計基準：</span>
-            <select id="filterYear" onchange="updateStatistics()"></select> 年
-            <select id="filterMonth" onchange="updateStatistics()">
-                <option value="all">全年</option>
-                <option value="01">01月</option><option value="02">02月</option><option value="03">03月</option>
-                <option value="04">04月</option><option value="05">05月</option><option value="06">06月</option>
-                <option value="07">07月</option><option value="08">08月</option><option value="09">09月</option>
-                <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-            </select>
-            <span id="dict-status" style="margin-left: 20px; font-size: 14px;"></span>
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
+            <div>
+                <span>📅 統計基準：</span>
+                <select id="filterYear" onchange="updateStatistics()" class="filter-select" style="width:auto; display:inline-block;"></select> 年
+                <select id="filterMonth" onchange="updateStatistics()" class="filter-select" style="width:auto; display:inline-block;">
+                    <option value="all">全年</option>
+                    <option value="01">01月</option><option value="02">02月</option><option value="03">03月</option>
+                    <option value="04">04月</option><option value="05">05月</option><option value="06">06月</option>
+                    <option value="07">07月</option><option value="08">08月</option><option value="09">09月</option>
+                    <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                </select>
+                <span id="dict-status" style="margin-left: 20px; font-size: 14px; background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 4px;"></span>
+            </div>
+            <div>
+                <span>👤 承辦人視角：</span>
+                <select id="filterAssignee" onchange="window.currentAssigneeFilter = this.value; renderTable();" class="filter-select" style="width:auto; display:inline-block; font-weight:bold; color:var(--primary); padding: 0 10px;">
+                    <option value="all">👤 全部人員</option>
+                    <option value="unassigned">🔴 未分派</option>
+                </select>
+            </div>
         </div>
-        <div class="stats-grid" id="statsDisplay" style="margin-top:10px;"></div>
+        
+        <div class="stats-grid" id="statsDisplay"></div>
+        
+        <div style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.4); padding-top: 12px;">
+            <span style="font-size: 14px; font-weight: bold; margin-bottom: 5px; display:inline-block; color: #f1c40f;">👥 承辦人工作量 (依上方基準過濾)：</span>
+            <div class="stats-grid" id="assigneeStatsDisplay"></div>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width:75px;">序號<button class="add-row-btn" title="手動新增一列" onclick="addNewRow()">+</button></th>
-                <th style="width:110px;">
-                    法編號<br>
-                    <input type="file" id="excelFile" style="display:none" accept=".xlsx, .xls" onchange="processExcel(this)">
-                    <button class="dict-upload-btn" onclick="document.getElementById('excelFile').click()">📂 上傳字典</button>
-                </th>
-                <th style="width:320px;color:white;">法名稱 (📂展開)</th>
-                <th style="width:280px;">異動明細</th>
-                <th style="width:110px;" id="date-header">三讀日期</th>
-                <th style="width:110px;">公布日期</th>
-                <th style="width:150px;">操作</th>
-                <th style="width:40px;">✕</th>
-            </tr>
-        </thead>
-        <tbody id="lawBody"></tbody>
-    </table>
-</div>
-
-<div id="assignModal" class="modal">
-    <div class="modal-content">
-        <h3>🚀 分派任務給承辦人</h3>
-        <p id="assignInfo" style="font-weight:bold; color:var(--accent);"></p>
-        <div id="shareLink" class="share-link"></div>
-        <button onclick="copyLink()" style="width:100%; padding:10px; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer;">複製連結傳送</button>
-        <button onclick="closeModal()" style="width:100%; margin-top:5px; background:#ccc; border:none; padding:8px;">取消</button>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:75px;">序號<button class="add-row-btn" title="手動新增一列" onclick="addNewRow()">+</button></th>
+                    <th style="width:100px;">
+                        法編號<br>
+                        <input type="file" id="excelFile" style="display:none" accept=".xlsx, .xls" onchange="processExcel(this)">
+                        <button class="dict-upload-btn" onclick="document.getElementById('excelFile').click()">📂 上傳字典</button>
+                    </th>
+                    <th style="width:260px; color:white;">法名稱 (📂展開)</th>
+                    <th style="width:180px;">異動明細</th>
+                    <th style="width:120px;">承辦人</th>
+                    <th style="width:120px;">狀態與進度</th>
+                    <th style="width:105px;" id="date-header">三讀日期</th>
+                    <th style="width:105px;">公布日期</th>
+                    <th style="width:80px;">解析結果</th>
+                    <th style="width:40px;">✕</th>
+                </tr>
+            </thead>
+            <tbody id="lawBody"></tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    // ⚠️ 貼上你的 GAS 網址
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec"; 
-
+    // 在 DETAIL_FIELDS 最後新增 "附帶決議"
     const DETAIL_FIELDS = [
         {id: "cnt_article", label: "條文", type: "num"},
         {id: "cnt_basic", label: "基本資料", type: "num"},
@@ -136,6 +161,7 @@
         {id: "cnt_resolution", label: "附帶決議", type: "num"}
     ];
 
+    // 附帶決議統計基準日與歷程上傳日共用 (可依需求調整)
     const STAT_MAP = {
         "cnt_article": "date_article_upload", "cnt_basic": "date_article_upload",
         "cnt_fix": "date_article_upload", "cnt_history": "date_article_upload",
@@ -148,8 +174,8 @@
     let lawData = JSON.parse(localStorage.getItem('lawData')) || [];
     let lawDictionary = JSON.parse(localStorage.getItem('lawDictionary')) || {};
     window.currentDateFilter = 'all';
+    window.currentAssigneeFilter = 'all';
 
-    // 1. 公報提取腳本
     function copyExtractorScript() {
         const scriptText = `(function() {
    const cnToNum = (s) => {
@@ -231,79 +257,6 @@
         });
     }
 
-    // ☁️ 雲端同步功能
-   async function syncFromCloud() {
-    if (!GAS_URL) {
-        alert("請先設定正確的 GAS_URL");
-        return;
-    }
-    
-    const syncStatus = document.getElementById('syncStatus');
-    if (syncStatus) syncStatus.style.display = 'inline';
-
-    try {
-        const response = await fetch(GAS_URL);
-        const cloudItems = await response.json();
-        
-        if (!Array.isArray(cloudItems)) throw new Error("雲端回傳格式錯誤");
-
-        let updateCount = 0;
-        
-        // 遍歷雲端抓下來的每一列
-        cloudItems.forEach(cloudRow => {
-            if (!cloudRow || !cloudRow.seq) return; // 跳過無效資料
-
-            // 在本地 lawData 中尋找對應序號的法案
-            const target = lawData.find(local => String(local.seq) === String(cloudRow.seq));
-            
-            if (target) {
-                let hasUpdate = false;
-                DETAIL_FIELDS.forEach(f => {
-                    // 💡 只有當「雲端有這欄」且「有填內容」時才更新
-                    // 這樣就不會因為試算表少了異動明細等欄位而報錯
-                    if (Object.prototype.hasOwnProperty.call(cloudRow, f.id) && 
-                        cloudRow[f.id] !== undefined && 
-                        cloudRow[f.id] !== null && 
-                        cloudRow[f.id] !== "") {
-                        
-                        target[f.id] = cloudRow[f.id];
-                        hasUpdate = true;
-                    }
-                });
-                if (hasUpdate) updateCount++;
-            }
-        });
-
-        // 儲存到 LocalStorage
-        localStorage.setItem('lawData', JSON.stringify(lawData));
-        renderTable();
-        
-        alert(`✅ 同步完成！已更新 ${updateCount} 筆資料。`);
-
-    } catch (e) {
-        console.error("同步失敗詳細原因:", e);
-        // 如果您看到資料有進來卻跳錯誤，通常是這裡的 alert 被觸發
-        alert("同步完成，但顯示過程有誤。請檢查控制台 (F12) 了解詳情。");
-    } finally {
-        if (syncStatus) syncStatus.style.display = 'none';
-    }
-}
-
-    // 🚀 分派任務功能
-    function openAssign(idx) {
-        const item = lawData[idx];
-        const modal = document.getElementById('assignModal');
-        // 自動抓取當前 GitHub Pages 的目錄
-        const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        const link = `${currentPath}form.html?id=${item.id}&name=${encodeURIComponent(item.lawName)}&seq=${item.seq}`;
-        document.getElementById('assignInfo').innerText = `${item.lawName} (${item.id || '無編號'})`;
-        document.getElementById('shareLink').innerText = link;
-        modal.style.display = 'block';
-    }
-
-    function closeModal() { document.getElementById('assignModal').style.display='none'; }
-    function copyLink() { navigator.clipboard.writeText(document.getElementById('shareLink').innerText); alert("連結已複製！可傳送給承辦人。"); }
-
     function cleanStr(s) { return String(s || "").trim().replace(/^["']|["']$/g, ""); }
     
     function findId(name) {
@@ -316,7 +269,7 @@
 
     function addNewRow() {
         let maxSeq = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
-        const newEntry = { seq: maxSeq + 1, id: "", lawName: "", code: "", date: "", pubDate: "", ...Object.fromEntries(DETAIL_FIELDS.map(f => [f.id, ""])) };
+        const newEntry = { seq: maxSeq + 1, id: "", lawName: "", code: "", date: "", pubDate: "", assignee: "", ...Object.fromEntries(DETAIL_FIELDS.map(f => [f.id, ""])) };
         lawData.unshift(newEntry);
         localStorage.setItem('lawData', JSON.stringify(lawData));
         renderTable();
@@ -337,63 +290,148 @@
             lawDictionary = newDict;
             localStorage.setItem('lawDictionary', JSON.stringify(newDict));
             lawData.forEach(item => { if(!item.id) item.id = findId(item.lawName); });
-            renderTable(); alert("✅ 字典載入成功！");
+            renderTable(); updateDictStatus(); alert("✅ 字典載入成功！");
         };
         reader.readAsArrayBuffer(input.files[0]);
     }
 
-    function renderTable() {
-        updateDateFilterUI();
-        const body = document.getElementById('lawBody');
-        body.innerHTML = '';
-        const filtered = lawData.filter(i => {
-            const hasPub = i.pubDate && i.pubDate.trim() !== '';
-            const view = window.currentView || 'all';
-            const tabMatch = view === 'pending' ? !hasPub : (view === 'published' ? hasPub : true);
-            const dateMatch = window.currentDateFilter === 'all' || cleanStr(i.date) === window.currentDateFilter;
-            return tabMatch && dateMatch;
-        });
-
-        filtered.forEach((item) => {
-            const idx = lawData.indexOf(item);
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="number" class="in-num" value="${item.seq || idx + 1}" onchange="silentUpdate(${idx},'seq',this.value)"></td>
-                <td><input type="text" id="id-in-${idx}" class="in-id" value="${item.id || ''}" maxlength="5" onchange="silentUpdate(${idx},'id',this.value)"></td>
-                <td><div style="display:flex;align-items:center;"><span onclick="toggleDetail(${idx})" style="cursor:pointer;margin-right:5px;">📂</span>
-                    <input type="text" class="in-text in-name" value="${item.lawName || ''}" onchange="silentUpdate(${idx},'lawName',this.value)"></div></td>
-                <td><input type="text" class="in-text" value="${item.code || ''}" onchange="silentUpdate(${idx},'code',this.value)"></td>
-                <td><input type="text" class="in-date" value="${item.date || ''}" onchange="silentUpdate(${idx},'date',this.value); renderTable();"></td>
-                <td><input type="text" class="in-date" value="${item.pubDate || ''}" onchange="silentUpdate(${idx},'pubDate',this.value); renderTable();"></td>
-                <td style="display:flex; gap:3px; justify-content:center;">
-                    <a href="${item.id ? item.id+'.html' : '#'}" target="_blank" class="btn-law">⚖️</a>
-                    <button class="btn-assign" onclick="openAssign(${idx})">🚀分派</button>
-                </td>
-                <td><a href="#" onclick="deleteRow(${idx})" style="color:red; text-decoration:none;">✕</a></td>
-            `;
-            body.appendChild(tr);
-
-            const dTr = document.createElement('tr');
-            dTr.id = `detail-${idx}`; dTr.className = 'detail-row';
-            let dHtml = `<td colspan="8"><div class="detail-container"><div class="compact-row">`;
-            DETAIL_FIELDS.forEach(f => {
-                let v = item[f.id] || "";
-                dHtml += `<div class="item-box" style="${f.type==='date'?'background:#e9ecef; border:1px solid #ced4da;':''}"><label>${f.label}</label>
-                         <input type="text" class="${f.type==='num'?'in-num':'in-date'} ${v!=''?'has-val':''}" value="${v}" onchange="silentUpdate(${idx},'${f.id}',this.value,this)"></div>`;
-            });
-            dTr.innerHTML = dHtml + `</div></div></td>`;
-            body.appendChild(dTr);
-        });
-        updateStatistics();
-    }
-
-    function updateDateFilterUI() {
+    function updateFiltersUI() {
         const header = document.getElementById('date-header');
         const allDates = [...new Set(lawData.map(i => cleanStr(i.date)))].filter(d => d).sort((a,b) => b-a);
         let html = `三讀日期<br><select class="filter-select" onchange="window.currentDateFilter = this.value; renderTable();">`;
         html += `<option value="all">全部日期</option>`;
         allDates.forEach(d => { html += `<option value="${d}" ${window.currentDateFilter === d ? 'selected' : ''}>${d}</option>`; });
         header.innerHTML = html + `</select>`;
+
+        const assignees = [...new Set(lawData.map(i => cleanStr(i.assignee)))].filter(a => a).sort();
+        
+        const aFilter = document.getElementById('filterAssignee');
+        if(aFilter) {
+            let aHtml = `<option value="all">👤 全部人員</option><option value="unassigned" ${window.currentAssigneeFilter === 'unassigned' ? 'selected' : ''}>🔴 未分派</option>`;
+            assignees.forEach(a => {
+                aHtml += `<option value="${a}" ${window.currentAssigneeFilter === a ? 'selected' : ''}>${a}</option>`;
+            });
+            aFilter.innerHTML = aHtml;
+        }
+
+        const dList = document.getElementById('assignee-list');
+        if(dList) {
+            dList.innerHTML = assignees.map(a => `<option value="${a}">`).join('');
+        }
+    }
+
+    function renderTable() {
+        updateFiltersUI();
+        const body = document.getElementById('lawBody');
+        body.innerHTML = '';
+        
+        const filtered = lawData.filter(i => {
+            const hasPub = i.pubDate && i.pubDate.trim() !== '';
+            const view = window.currentView || 'all';
+            const tabMatch = view === 'pending' ? !hasPub : (view === 'published' ? hasPub : true);
+            const dateMatch = window.currentDateFilter === 'all' || cleanStr(i.date) === window.currentDateFilter;
+            const assigneeMatch = window.currentAssigneeFilter === 'all' || 
+                                  (window.currentAssigneeFilter === 'unassigned' ? !i.assignee || i.assignee.trim() === '' : cleanStr(i.assignee) === window.currentAssigneeFilter);
+            return tabMatch && dateMatch && assigneeMatch;
+        });
+
+        filtered.forEach((item) => {
+            const idx = lawData.indexOf(item);
+            
+            // 計算進度與狀態 (以核心 6 欄位為基準)
+            const coreFields = [
+                "cnt_article", "date_article_upload", 
+                "cnt_reason", "date_reason_upload", 
+                "cnt_process", "date_process_upload"
+            ];
+            const filledCoreFields = coreFields.filter(id => item[id] && item[id].toString().trim() !== "");
+            const pct = Math.round((filledCoreFields.length / coreFields.length) * 100);
+
+            // 如果達到 100%，且其他數值型欄位為空，則自動補 0
+            if (pct === 100) {
+                let needsUpdate = false;
+                DETAIL_FIELDS.filter(f => f.type === 'num' && !coreFields.includes(f.id)).forEach(f => {
+                    if (item[f.id] === undefined || item[f.id] === null || item[f.id].toString().trim() === "") {
+                        item[f.id] = "0";
+                        needsUpdate = true;
+                    }
+                });
+                if (needsUpdate) {
+                    localStorage.setItem('lawData', JSON.stringify(lawData));
+                }
+            }
+
+            let statusClass = '', statusText = '';
+            const isAssigned = item.assignee && item.assignee.trim() !== "";
+            if (!isAssigned) {
+                statusClass = 'status-unassigned';
+                statusText = '🔴 未分派';
+            } else if (filledCoreFields.length === 0) {
+                statusClass = 'status-progress';
+                statusText = '🟡 待回填';
+            } else if (pct < 100) {
+                statusClass = 'status-progress';
+                statusText = '🔵 處理中';
+            } else {
+                statusClass = 'status-done';
+                statusText = '🟢 已完成';
+            }
+
+            // 主視圖摘要標籤 (維持顯示所有非空的數值欄位)
+            const numFields = DETAIL_FIELDS.filter(f => f.type === 'num');
+            let summaryHtml = '<div class="summary-badges">';
+            numFields.forEach(f => {
+                let v = item[f.id];
+                if (v && v.toString().trim() !== "") {
+                    summaryHtml += `<span class="s-badge filled">${f.label}: ${v}</span>`;
+                }
+            });
+            summaryHtml += '</div>';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="number" class="in-num" value="${item.seq || idx + 1}" onchange="silentUpdate(${idx},'seq',this.value)"></td>
+                <td><input type="text" id="id-in-${idx}" class="in-id" value="${item.id || ''}" maxlength="5" onchange="silentUpdate(${idx},'id',this.value)"></td>
+                <td style="text-align:left;">
+                    <div style="display:flex;align-items:center;">
+                        <span onclick="toggleDetail(${idx})" style="cursor:pointer;margin-right:5px;font-size:18px;" title="展開/收合細節">📂</span>
+                        <input type="text" class="in-text in-name" value="${item.lawName || ''}" onchange="silentUpdate(${idx},'lawName',this.value)">
+                    </div>
+                    ${summaryHtml}
+                </td>
+                <td><input type="text" class="in-text" value="${item.code || ''}" onchange="silentUpdate(${idx},'code',this.value)"></td>
+                <td>
+                    <div style="display:flex; align-items:center; justify-content:center;">
+                        <input list="assignee-list" class="in-assignee" value="${item.assignee || ''}" placeholder="選擇或輸入" onchange="silentUpdate(${idx},'assignee',this.value); renderTable();" style="width:85%;">
+                        <span onclick="copyFormUrl(${idx})" title="複製分派網址給承辦人" style="cursor:pointer; font-size:18px; margin-left:4px; transition:0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">🔗</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="${statusClass} status-badge">${statusText}</div>
+                    <div class="progress-container" title="已回填核心項目 ${filledCoreFields.length}/${coreFields.length} 項">
+                        <div class="progress-bar" style="width: ${pct}%"></div>
+                        <div class="progress-text">${pct}%</div>
+                    </div>
+                </td>
+                <td><input type="text" class="in-date" value="${item.date || ''}" onchange="silentUpdate(${idx},'date',this.value); renderTable();"></td>
+                <td><input type="text" class="in-date" value="${item.pubDate || ''}" onchange="silentUpdate(${idx},'pubDate',this.value); renderTable();"></td>
+                <td><a href="${item.id ? item.id+'.html' : '#'}" target="_blank" class="btn-law">⚖️ 法條</a></td>
+                <td><a href="#" onclick="deleteRow(${idx})" style="color:#e74c3c;font-weight:bold;text-decoration:none;font-size:18px;">✕</a></td>
+            `;
+            body.appendChild(tr);
+
+            const dTr = document.createElement('tr');
+            dTr.id = `detail-${idx}`; dTr.className = 'detail-row';
+            let dHtml = `<td colspan="10"><div class="detail-container"><div class="compact-row">`;
+            DETAIL_FIELDS.forEach(f => {
+                let v = item[f.id] || "";
+                dHtml += `<div class="item-box" style="${f.type==='date'?'background:#e9ecef; border:1px solid #ced4da;':''}"><label>${f.label}</label>
+                         <input type="text" class="${f.type==='num'?'in-num':'in-date'} ${v!=''?'has-val':''}" value="${v}" onchange="silentUpdate(${idx},'${f.id}',this.value,this); renderTable();"></div>`;
+            });
+            dTr.innerHTML = dHtml + `</div></div></td>`;
+            body.appendChild(dTr);
+        });
+        updateStatistics();
     }
 
     function silentUpdate(idx, field, val, el = null) {
@@ -404,101 +442,137 @@
         }
         if(el) { val!="" ? el.classList.add('has-val') : el.classList.remove('has-val'); }
         localStorage.setItem('lawData', JSON.stringify(lawData));
-        updateStatistics();
+        if(field !== 'assignee' && field !== 'date' && field !== 'pubDate' && !DETAIL_FIELDS.find(f=>f.id===field)) {
+            updateStatistics();
+        }
+    }
+
+    function copyFormUrl(idx) {
+        const item = lawData[idx];
+        const url = `https://peiyiyeh.github.io/law-system/form.html?id=${encodeURIComponent(item.id || '')}&name=${encodeURIComponent(item.lawName || '')}&seq=${item.seq || ''}`;
+        
+        navigator.clipboard.writeText(url).then(() => {
+            alert(`✅ 已複製 ${item.lawName} 的分派表單網址！\n\n可直接貼給承辦人填寫。`);
+        }).catch(() => {
+            prompt("請手動複製以下網址：", url);
+        });
     }
 
     async function importFromClipboard() {
-    try {
-        const text = await navigator.clipboard.readText();
-        const imported = JSON.parse(text);
-        const array = Array.isArray(imported) ? imported : [imported];
-        let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
+        let text = "";
+        try {
+            text = await navigator.clipboard.readText();
+        } catch (err) {
+            text = prompt("無法自動讀取剪貼簿（可能因瀏覽器安全性限制），請直接在此貼上 JSON 內容：");
+        }
         
-        array.forEach(i => {
-            const name = cleanStr(i.lawName);
-            // 決定序號：有舊用舊，沒舊累加
-            const finalSeq = i.seq ? parseInt(i.seq) : ++maxS;
-            
-            const newEntry = { 
-                seq: finalSeq, 
-                id: i.id || findId(name), 
-                lawName: name, 
-                code: i.code || '', 
-                date: i.date || '', 
-                pubDate: i.pubDate || ''
-            };
+        if (!text || text.trim() === "") return;
 
-            // 自動對接細項欄位
-            DETAIL_FIELDS.forEach(f => {
-                newEntry[f.id] = (i[f.id] !== undefined) ? i[f.id] : "";
+        try {
+            const imported = JSON.parse(text);
+            const array = Array.isArray(imported) ? imported : [imported];
+            let maxS = lawData.length > 0 ? Math.max(...lawData.map(o => parseInt(o.seq) || 0)) : 0;
+            array.forEach(i => {
+                maxS++;
+                const name = cleanStr(i.lawName);
+                lawData.push({ 
+                    seq: maxS, 
+                    id: findId(name), 
+                    lawName: name, 
+                    code: i.code || '', 
+                    date: i.date || '', 
+                    pubDate: i.pubDate || '', 
+                    assignee: i.assignee || '', 
+                    ...Object.fromEntries(DETAIL_FIELDS.map(f => [f.id, (i[f.id] !== undefined && i[f.id] !== null) ? i[f.id] : ""])) 
+                });
             });
-
-            lawData.push(newEntry);
-        });
-        
-        localStorage.setItem('lawData', JSON.stringify(lawData));
-        renderTable(); 
-        if (typeof updateStatistics === "function") updateStatistics(); // 同步更新上方統計
-        alert("✅ 匯入成功！已保留所有統計細項。");
-    } catch (e) { 
-        alert("內容格式不正確或剪貼簿無資料"); 
+            localStorage.setItem('lawData', JSON.stringify(lawData));
+            renderTable(); 
+            alert("匯入成功！");
+        } catch (e) { 
+            console.error(e);
+            alert("內容格式不正確或非 JSON 格式\n(請確認您複製的是爬蟲結果，或是完整的備份檔)"); 
+        }
     }
-}
 
     function updateStatistics() {
-    const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
-    if (!fy) return;
-    const ty = fy.value, tm = fm.value;
-    let totals = {}, cases = 0;
-    
-    // 初始化統計數據
-    DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
-    
-    lawData.forEach(item => {
-        // 💡 修正點：強制將 d 轉為字串，避免數字格式導致 substring 崩潰
-        const isMatch = (d) => { 
-            if (!d) return false; 
-            const s = String(d); // 強制轉字串
-            if (s.length < 5) return false; 
-            
-            // 根據字串長度動態計算年分與月份 (處理 1130520 或 990520)
-            const y = s.substring(0, s.length - 4); 
-            const m = s.substring(s.length - 4, s.length - 2); 
-            
-            return tm === "all" ? y === ty : (y === ty && m === tm); 
-        };
+        const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
+        if(!fy) return;
+        const ty = fy.value, tm = fm.value;
+        let totals = {}, cases = 0;
+        let assigneeStats = {};
 
-        // 檢查案件數 (條文上傳日)
-        if (isMatch(item.date_article_upload)) cases++;
+        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
+        
+        lawData.forEach(item => {
+            const isMatch = (d) => { if(!d || d.length < 5) return false; const y = d.substring(0, d.length-4), m = d.substring(d.length-4, d.length-2); return tm === "all" ? y === ty : (y === ty && m === tm); };
+            
+            let matchedCase = false;
+            if(isMatch(item.date_article_upload) || isMatch(item.date)) { 
+                // 若沒有上傳日，但三讀日期符合也算
+                cases++;
+                matchedCase = true;
+            } else if (!item.date_article_upload && !item.date) {
+                // 如果都沒有日期，算作匹配 (可根據需求調整)
+            }
 
-        // 統計各項細節數據 (如條文數、附帶決議數等)
-        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { 
-            // 根據對應的日期欄位 (STAT_MAP) 來判斷是否計入本月統計
-            if (isMatch(item[STAT_MAP[f.id]])) {
-                totals[f.id] += (parseInt(item[f.id]) || 0); 
+            let aName = (item.assignee && item.assignee.trim() !== "") ? item.assignee.trim() : "未分派";
+            if (!assigneeStats[aName]) assigneeStats[aName] = { cases: 0, items: 0 };
+            if(matchedCase) assigneeStats[aName].cases++;
+
+            DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { 
+                if(isMatch(item[STAT_MAP[f.id]])) {
+                    let val = (parseInt(item[f.id]) || 0);
+                    totals[f.id] += val; 
+                    assigneeStats[aName].items += val;
+                } 
+            });
+        });
+
+        let h = `<div class="stat-box">月案件數：<span class="stat-val">${cases}</span></div>`;
+        DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { h += `<div class="stat-box">${f.label}：<span class="stat-val">${totals[f.id]}</span></div>`; });
+        document.getElementById('statsDisplay').innerHTML = h;
+
+        let ah = '';
+        Object.keys(assigneeStats).sort().forEach(a => {
+            let st = assigneeStats[a];
+            if (st.cases > 0 || st.items > 0) {
+                let color = a === "未分派" ? "#e74c3c" : "#f1c40f";
+                ah += `<div class="stat-box" style="border-left-color: ${color};"><span style="color:#eee;">${a}：</span><span class="stat-val" style="color:${color};">${st.cases}件 / ${st.items}項</span></div>`;
             }
         });
-    });
-
-    // 渲染 HTML
-    let h = `<div class="stat-box">月案件數：<span class="stat-val">${cases}</span></div>`;
-    DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => { 
-        h += `<div class="stat-box">${f.label}：<span class="stat-val">${totals[f.id]}</span></div>`; 
-    });
-    document.getElementById('statsDisplay').innerHTML = h;
-}
+        if(ah === '') ah = '<span style="font-size:13px; color:#ccc; margin-top:5px;">無符合條件的數據</span>';
+        document.getElementById('assigneeStatsDisplay').innerHTML = ah;
+    }
 
     function exportCSV() {
-        let headers = ["序號", "法編號", "法名稱", "異動明細", "三讀日期", "公布日期"];
+        let headers = ["序號", "法編號", "法名稱", "異動明細", "承辦人", "狀態", "三讀日期", "公布日期"];
         DETAIL_FIELDS.forEach(f => headers.push(f.label));
         let csv = "\uFEFF" + headers.join(",") + "\n";
         lawData.forEach(item => {
-            let row = [item.seq || "", item.id ? `="${item.id}"` : "", `"${(item.lawName || "").replace(/"/g, '""')}"`, `"${(item.code || "").replace(/"/g, '""')}"`, item.date || "", item.pubDate || ""];
+            const coreFields = [
+                "cnt_article", "date_article_upload", 
+                "cnt_reason", "date_reason_upload", 
+                "cnt_process", "date_process_upload"
+            ];
+            const filledCoreFields = coreFields.filter(id => item[id] && item[id].toString().trim() !== "");
+            let status = (!item.assignee) ? '未分派' : (filledCoreFields.length === 0 ? '待回填' : (filledCoreFields.length < coreFields.length ? '處理中' : '已完成'));
+
+            let row = [
+                item.seq || "", 
+                item.id ? `="${item.id}"` : "", 
+                `"${(item.lawName || "").replace(/"/g, '""')}"`, 
+                `"${(item.code || "").replace(/"/g, '""')}"`, 
+                `"${(item.assignee || "").replace(/"/g, '""')}"`,
+                status,
+                item.date || "", 
+                item.pubDate || ""
+            ];
             DETAIL_FIELDS.forEach(f => row.push(item[f.id] || ""));
             csv += row.join(",") + "\n";
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `LawData_Export.csv`; a.click();
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `LawData_Full.csv`; a.click();
     }
 
     const yearSel = document.getElementById('filterYear');
@@ -508,40 +582,19 @@
 
     function updateDictStatus() {
         const status = document.getElementById('dict-status');
+        if(!status) return;
         const count = Object.keys(lawDictionary).length;
         status.innerText = count > 0 ? `📔 字典：已就緒 (${count} 筆)` : `📔 字典：尚未上傳`;
-        status.style.color = count > 0 ? "#2ecc71" : "#e67e22";
+        status.style.color = count > 0 ? "#a2d9ce" : "#f5b041";
     }
 
     function changeView(v) { window.currentView = v; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab-' + v).classList.add('active'); renderTable(); }
     function deleteRow(i) { if(confirm("確定刪除？")) { lawData.splice(i,1); renderTable(); } }
     function toggleDetail(i) { document.getElementById(`detail-${i}`).classList.toggle('active'); }
-    function saveAndSort() { lawData.sort((a,b)=>(parseInt(a.seq)||999)-(parseInt(b.seq)||999)); localStorage.setItem('lawData', JSON.stringify(lawData)); renderTable(); alert("✅ 儲存排序成功！"); }
+    function exportJSON() { const blob = new Blob([JSON.stringify(lawData, null, 2)], {type:'application/json'}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "LawData_Backup.json"; a.click(); }
+    function saveAndSort() { lawData.sort((a,b)=>(parseInt(a.seq)||999)-(parseInt(b.seq)||999)); localStorage.setItem('lawData', JSON.stringify(lawData)); renderTable(); alert("儲存排序成功！"); }
 
     updateDictStatus(); renderTable();
-    // Json 備份 (匯出) 功能
-function exportToJson() {
-    // 檢查是否有資料可以備份
-    if (!lawData || lawData.length === 0) {
-        alert("目前沒有資料可以備份喔！");
-        return;
-    }
-
-    // 將資料轉為 JSON 字串
-    const dataStr = JSON.stringify(lawData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
-    // 自動產生檔名 (包含今天日期)
-    const exportFileDefaultName = `legislative_backup_${new Date().toISOString().slice(0,10)}.json`;
-
-    // 建立隱藏連結並觸發下載
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    console.log("備份完成");
-}
 </script>
 </body>
 </html>
