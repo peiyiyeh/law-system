@@ -643,22 +643,45 @@
     function updateStatistics() {
         const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
         if(!fy) return;
-        const ty = fy.value, tm = fm.value;
+        const ty = (fy.value && String(fy.value).trim() !== "") ? String(fy.value).trim() : String(new Date().getFullYear() - 1911);
+        // 強制把 value 規範成字串，避免 DOM option value 型別造成比對問題
+        if (fy.value !== ty) fy.value = ty;
+        const tm = fm.value;
         let totals = {}, cases = 0;
         let assigneeStats = {};
 
         DETAIL_FIELDS.filter(f => f.type === "num").forEach(f => totals[f.id] = 0);
         
         lawData.forEach(item => {
-            const isMatch = (d) => { if(!d || d.length < 5) return false; const y = d.substring(0, d.length-4), m = d.substring(d.length-4, d.length-2); return tm === "all" ? y === ty : (y === ty && m === tm); };
+            const isMatch = (d) => {
+                if (!d) return false;
+                const dd = String(d).replace(/\D/g, ""); // 允許 1130520 / 113-05-20 / 113/05/20
+                if (dd.length < 5) return false;
+
+                // 對齊 index_V1 的切法，但加上少量長度情境保護
+                // - 6 碼：99 + MM + DD (如 990520)
+                // - 7 碼：YYY + MM + DD (如 1130520)
+                let y = "", m = "";
+                if (dd.length === 6) {
+                    y = dd.substring(0, 2);
+                    m = dd.substring(2, 4);
+                } else if (dd.length === 7) {
+                    y = dd.substring(0, 3);
+                    m = dd.substring(3, 5);
+                } else {
+                    y = dd.substring(0, dd.length - 4);
+                    m = dd.substring(dd.length - 4, dd.length - 2);
+                }
+
+                return tm === "all" ? (y === ty) : (y === ty && m === tm);
+            };
             
             let matchedCase = false;
-            if(isMatch(item.date_article_upload) || isMatch(item.date)) { 
+            // cases：跟 index_V1 一樣，以 date_article_upload 為主（但保留 date 的容錯）
+            if (isMatch(item.date_article_upload) || isMatch(item.date)) { 
                 // 若沒有上傳日，但三讀日期符合也算
                 cases++;
                 matchedCase = true;
-            } else if (!item.date_article_upload && !item.date) {
-                // 如果都沒有日期，算作匹配 (可根據需求調整)
             }
 
             let aName = (item.assignee && item.assignee.trim() !== "") ? item.assignee.trim() : "未分派";
@@ -724,6 +747,7 @@
     const yearSel = document.getElementById('filterYear');
     const currY = new Date().getFullYear() - 1911;
     for(let y = currY; y >= 110; y--) yearSel.add(new Option(y, y));
+    yearSel.value = String(currY);
     document.getElementById('filterMonth').value = String(new Date().getMonth()+1).padStart(2,'0');
 
     function updateDictStatus() {
