@@ -78,6 +78,7 @@
             <button style="background:#f39c12" onclick="saveAndSort()" title="依序號重新排序並儲存">3. 更新儲存</button>
             <button style="background:var(--success)" onclick="exportCSV()" title="匯出成 Excel 格式 (含承辦人與進度)">4. Excel 匯出</button>
             <button style="background:#9b59b6" onclick="exportJSON()" title="備份整個看板資料">5. Json 備份</button>
+            <button id="cloud-sync-btn" style="background:#16a085" onclick="syncFromCloud()" title="從雲端回填承辦人表單資料">6. 雲端同步</button>
         </div>
     </div>
 
@@ -88,6 +89,11 @@
     </div>
 
     <div class="stats-container">
+        <div style="border-bottom: 1px dashed rgba(255,255,255,0.4); padding-bottom: 10px; margin-bottom: 10px;">
+            <span style="font-size: 14px; font-weight: bold; margin-bottom: 5px; display:inline-block; color: #8be9fd;">📌 承辦人總加總 (全部資料)：</span>
+            <div class="stats-grid" id="assigneeTopSummary"></div>
+        </div>
+
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
             <div>
                 <span>📅 統計基準：</span>
@@ -134,7 +140,6 @@
                     <th style="width:120px;">狀態與進度</th>
                     <th style="width:105px;" id="date-header">三讀日期</th>
                     <th style="width:105px;">公布日期</th>
-                    <th style="width:80px;">解析結果</th>
                     <th style="width:40px;">✕</th>
                 </tr>
             </thead>
@@ -144,6 +149,7 @@
 </div>
 
 <script>
+    const CLOUD_SYNC_URL = "https://script.google.com/macros/s/AKfycbzfQ7JTJPiXuBDspO7A0sCn1JnUkuuikiX5WYhHOXW5GGy1-LGJybwf6CO_aWkKPSeO/exec";
     // 在 DETAIL_FIELDS 最後新增 "附帶決議"
     const DETAIL_FIELDS = [
         {id: "cnt_article", label: "條文", type: "num"},
@@ -175,6 +181,8 @@
     let lawDictionary = JSON.parse(localStorage.getItem('lawDictionary')) || {};
     window.currentDateFilter = 'all';
     window.currentAssigneeFilter = 'all';
+    const CLOUD_FIELDS = DETAIL_FIELDS.map(f => f.id);
+    const CLOUD_SYNC_CURSOR_KEY = "lawCloudSyncCursor";
 
     function copyExtractorScript() {
         const scriptText = `(function() {
@@ -415,14 +423,13 @@
                 </td>
                 <td><input type="text" class="in-date" value="${item.date || ''}" onchange="silentUpdate(${idx},'date',this.value); renderTable();"></td>
                 <td><input type="text" class="in-date" value="${item.pubDate || ''}" onchange="silentUpdate(${idx},'pubDate',this.value); renderTable();"></td>
-                <td><a href="${item.id ? item.id+'.html' : '#'}" target="_blank" class="btn-law">⚖️ 法條</a></td>
                 <td><a href="#" onclick="deleteRow(${idx})" style="color:#e74c3c;font-weight:bold;text-decoration:none;font-size:18px;">✕</a></td>
             `;
             body.appendChild(tr);
 
             const dTr = document.createElement('tr');
             dTr.id = `detail-${idx}`; dTr.className = 'detail-row';
-            let dHtml = `<td colspan="10"><div class="detail-container"><div class="compact-row">`;
+            let dHtml = `<td colspan="9"><div class="detail-container"><div class="compact-row">`;
             DETAIL_FIELDS.forEach(f => {
                 let v = item[f.id] || "";
                 dHtml += `<div class="item-box" style="${f.type==='date'?'background:#e9ecef; border:1px solid #ced4da;':''}"><label>${f.label}</label>
@@ -495,6 +502,144 @@
         }
     }
 
+    function normalizeCloudRows(raw) {
+        if (Array.isArray(raw)) return raw;
+        if (raw && Array.isArray(raw.data)) return raw.data;
+        if (raw && Array.isArray(raw.rows)) return raw.rows;
+        if (raw && Array.isArray(raw.items)) return raw.items;
+        return [];
+    }
+
+    function parseCloudItem(item) {
+        if (!item || typeof item !== 'object') return null;
+        const values = item.values && typeof item.values === "object" ? item.values : {};
+        const parsed = {};
+        CLOUD_FIELDS.forEach(fid => {
+            if (values[fid] !== undefined && values[fid] !== null && String(values[fid]).trim() !== "") {
+                parsed[fid] = String(values[fid]).trim();
+            } else if (item[fid] !== undefined && item[fid] !== null && String(item[fid]).trim() !== "") {
+                parsed[fid] = String(item[fid]).trim();
+            }
+        });
+        const id = cleanStr(item.id || item.lawId || item.法編號 || "");
+        const seq = String(item.seq || item.serial || item.序號 || "").trim();
+        const updatedAtMs = parseCloudTimestamp(item.updatedAt || item.timestamp || item.ts || item.time || item.createdAt || "");
+        return {
+            id: id,
+            seq: seq,
+            values: parsed,
+            updatedAtMs: updatedAtMs
+        };
+    }
+
+    function parseCloudTimestamp(raw) {
+        if (raw === undefined || raw === null || String(raw).trim() === "") return 0;
+        const txt = String(raw).trim();
+        if (/^\d+$/.test(txt)) {
+            const n = Number(txt);
+            if (n > 1e12) return n;
+            if (n > 1e9) return n * 1000;
+        }
+        const ms = Date.parse(txt);
+        return isNaN(ms) ? 0 : ms;
+    }
+
+    async function syncFromCloud() {
+        if (!CLOUD_SYNC_URL) {
+            alert("尚未設定雲端同步網址。");
+            return;
+        }
+        const syncBtn = document.getElementById('cloud-sync-btn');
+        const oldText = syncBtn ? syncBtn.innerText : "";
+        if (syncBtn) {
+            syncBtn.disabled = true;
+            syncBtn.innerText = "同步中...";
+            syncBtn.style.opacity = "0.75";
+        }
+        try {
+            const lastCursor = Number(localStorage.getItem(CLOUD_SYNC_CURSOR_KEY) || 0);
+            let syncUrl = `${CLOUD_SYNC_URL}?t=${Date.now()}`;
+            if (lastCursor > 0) syncUrl += `&since=${lastCursor}`;
+
+            const resp = await fetch(syncUrl, { method: "GET", cache: "no-store" });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const raw = await resp.json();
+            let rows = normalizeCloudRows(raw).map(parseCloudItem).filter(Boolean);
+            if (lastCursor > 0) {
+                rows = rows.filter(r => r.updatedAtMs === 0 || r.updatedAtMs > lastCursor);
+            }
+            if (rows.length === 0) {
+                alert("目前沒有比上次更新更晚的資料。");
+                return;
+            }
+
+            let updatedCount = 0;
+            let updatedFields = 0;
+            let latestCursor = lastCursor;
+            rows.forEach(r => {
+                let idx = -1;
+                if (r.id) idx = lawData.findIndex(x => cleanStr(x.id) === r.id);
+                if (idx === -1 && r.seq) idx = lawData.findIndex(x => String(x.seq || "").trim() === r.seq);
+                if (idx === -1) return;
+
+                let touched = false;
+                Object.keys(r.values).forEach(fid => {
+                    const v = r.values[fid];
+                    if (v !== "") {
+                        lawData[idx][fid] = v;
+                        touched = true;
+                        updatedFields++;
+                    }
+                });
+                if (touched) {
+                    updatedCount++;
+                    if (r.updatedAtMs > latestCursor) latestCursor = r.updatedAtMs;
+                }
+            });
+
+            if (updatedCount === 0) {
+                alert("已讀取雲端資料，但沒有找到可對應的法案（請確認法編號或序號）。");
+                return;
+            }
+            localStorage.setItem('lawData', JSON.stringify(lawData));
+            if (latestCursor > lastCursor) {
+                localStorage.setItem(CLOUD_SYNC_CURSOR_KEY, String(latestCursor));
+            }
+            renderTable();
+            alert(`✅ 雲端同步完成：${updatedCount} 筆法案，回填 ${updatedFields} 個欄位（僅同步最新資料）。`);
+        } catch (err) {
+            console.error(err);
+            alert("❌ 雲端同步失敗，請稍後重試或確認 GAS 已開放 GET JSON。");
+        } finally {
+            if (syncBtn) {
+                syncBtn.disabled = false;
+                syncBtn.innerText = oldText || "6. 雲端同步";
+                syncBtn.style.opacity = "1";
+            }
+        }
+    }
+
+    function updateAssigneeTopSummary() {
+        const topEl = document.getElementById('assigneeTopSummary');
+        if (!topEl) return;
+        const numFields = DETAIL_FIELDS.filter(f => f.type === "num").map(f => f.id);
+        const totals = {};
+        lawData.forEach(item => {
+            const aName = cleanStr(item.assignee) || "未分派";
+            if (!totals[aName]) totals[aName] = { cases: 0, sum: 0 };
+            totals[aName].cases += 1;
+            numFields.forEach(fid => {
+                totals[aName].sum += (parseInt(item[fid], 10) || 0);
+            });
+        });
+
+        const html = Object.keys(totals).sort().map(a => {
+            const color = a === "未分派" ? "#ff7675" : "#74b9ff";
+            return `<div class="stat-box" style="border-left-color:${color};"><span style="color:#ecf0f1;">${a}</span><span class="stat-val" style="color:${color};">${totals[a].cases}件 / ${totals[a].sum}項</span></div>`;
+        }).join('');
+        topEl.innerHTML = html || '<span style="font-size:13px; color:#ccc;">目前無資料</span>';
+    }
+
     function updateStatistics() {
         const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
         if(!fy) return;
@@ -543,6 +688,7 @@
         });
         if(ah === '') ah = '<span style="font-size:13px; color:#ccc; margin-top:5px;">無符合條件的數據</span>';
         document.getElementById('assigneeStatsDisplay').innerHTML = ah;
+        updateAssigneeTopSummary();
     }
 
     function exportCSV() {
