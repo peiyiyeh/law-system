@@ -89,11 +89,6 @@
     </div>
 
     <div class="stats-container">
-        <div style="border-bottom: 1px dashed rgba(255,255,255,0.4); padding-bottom: 10px; margin-bottom: 10px;">
-            <span style="font-size: 14px; font-weight: bold; margin-bottom: 5px; display:inline-block; color: #8be9fd;">📌 承辦人總加總 (全部資料)：</span>
-            <div class="stats-grid" id="assigneeTopSummary"></div>
-        </div>
-
         <div style="display:flex; justify-content:space-between; flex-wrap:wrap; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
             <div>
                 <span>📅 統計基準：</span>
@@ -619,27 +614,6 @@
         }
     }
 
-    function updateAssigneeTopSummary() {
-        const topEl = document.getElementById('assigneeTopSummary');
-        if (!topEl) return;
-        const numFields = DETAIL_FIELDS.filter(f => f.type === "num").map(f => f.id);
-        const totals = {};
-        lawData.forEach(item => {
-            const aName = cleanStr(item.assignee) || "未分派";
-            if (!totals[aName]) totals[aName] = { cases: 0, sum: 0 };
-            totals[aName].cases += 1;
-            numFields.forEach(fid => {
-                totals[aName].sum += (parseInt(item[fid], 10) || 0);
-            });
-        });
-
-        const html = Object.keys(totals).sort().map(a => {
-            const color = a === "未分派" ? "#ff7675" : "#74b9ff";
-            return `<div class="stat-box" style="border-left-color:${color};"><span style="color:#ecf0f1;">${a}</span><span class="stat-val" style="color:${color};">${totals[a].cases}件 / ${totals[a].sum}項</span></div>`;
-        }).join('');
-        topEl.innerHTML = html || '<span style="font-size:13px; color:#ccc;">目前無資料</span>';
-    }
-
     function updateStatistics() {
         const fy = document.getElementById('filterYear'), fm = document.getElementById('filterMonth');
         if(!fy) return;
@@ -711,7 +685,6 @@
         });
         if(ah === '') ah = '<span style="font-size:13px; color:#ccc; margin-top:5px;">無符合條件的數據</span>';
         document.getElementById('assigneeStatsDisplay').innerHTML = ah;
-        updateAssigneeTopSummary();
     }
 
     function exportCSV() {
